@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174d46">
+  <title>City Tracker · Rilievi sul territorio</title>
+  <meta name="description" content="City Tracker: strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi. I dati restano nel tuo browser.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+  <style>
+    /* Impaginazione e controlli: nessun font o asset locale necessario. */
+    :root { --ink:#213c3a; --muted:#637572; --green:#174d46; --green-light:#e8f0ec; --paper:#f8faf8; --line:#dce4de; --blue:#2476cf; --orange:#d87916; --known:#1f9d62; --red:#d43d3d; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; font-size:14px; color:var(--ink); background:var(--paper); }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:default; opacity:.45; }
+    button:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid #68a89b; outline-offset:3px; }
+    [hidden] { display:none !important; }
+    a { color:var(--green); }
+    .app { display:grid; grid-template-columns:374px minmax(0,1fr); height:100vh; height:100dvh; }
+    .sidebar { display:flex; flex-direction:column; min-height:0; background:#fff; border-right:1px solid var(--line); z-index:1100; }
+    .brand { padding:27px 24px 20px; border-bottom:1px solid var(--line); }
+    .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:2px; font-weight:700; color:var(--muted); }
+    .brand-title { display:flex; align-items:center; gap:11px; margin:12px 0 8px; }
+    .brand-mark { width:35px; height:35px; display:grid; place-items:center; background:var(--green); color:#fff; border-radius:10px; }
+    .brand-mark svg { width:23px; height:23px; }
+    h1 { font-size:23px; font-weight:650; letter-spacing:-.8px; margin:0; }
+    .brand p { margin:0; color:var(--muted); font-size:12px; line-height:1.6; }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); margin-top:21px; }
+    .stat { padding-left:11px; border-left:1px solid var(--line); }
+    .stat:first-child { border:0; padding:0; }
+    .stat strong { font-size:24px; line-height:1.2; font-weight:650; display:block; }
+    .stat small { color:var(--muted); font-size:11px; display:block; margin-top:5px; }
+    .blue-text { color:var(--blue); } .orange-text { color:var(--orange); } .green-text { color:var(--known); }
+    .side-scroll { overflow:auto; flex:1; scrollbar-width:thin; }
+    details.section { border-bottom:1px solid var(--line); }
+    summary { list-style:none; display:flex; gap:12px; align-items:center; padding:18px 24px; cursor:pointer; font-weight:650; font-size:13px; }
+    summary::-webkit-details-marker { display:none; }
+    summary::after { content:'+'; font-size:18px; margin-left:auto; color:var(--muted); font-weight:400; }
+    details[open]>summary::after { content:'−'; }
+    .section-number { font-size:10px; letter-spacing:1px; font-weight:600; color:#859690; }
+    .section-body { padding:0 24px 22px; }
+    label,.field-label { display:block; font-size:12px; font-weight:600; margin:0 0 7px; }
+    input[type=text],input[type=number],textarea { width:100%; border:1px solid #ccd8d0; background:#fff; border-radius:7px; padding:10px 11px; color:var(--ink); outline:none; }
+    input:focus,textarea:focus { border-color:var(--green); box-shadow:0 0 0 2px #174d4614; }
+    input::placeholder,textarea::placeholder { color:#929d99; }
+    textarea { resize:vertical; min-height:65px; line-height:1.5; }
+    .field { margin-bottom:15px; }
+    .optional { font-size:11px; font-weight:400; color:var(--muted); }
+    .coords { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .coords input { font-size:12px; }
+    .hint { color:var(--muted); font-size:11px; line-height:1.6; margin:8px 0 0; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:39px; padding:10px 13px; border:1px solid #cfdbd3; border-radius:7px; color:var(--ink); background:#fff; font-size:12px; font-weight:600; transition:background .15s; }
+    .btn:hover:not(:disabled) { background:#f0f5f1; }
+    .btn.primary { background:var(--green); color:#fff; border-color:var(--green); }
+    .btn.primary:hover:not(:disabled) { background:#246459; }
+    .btn.full { width:100%; }
+    .btn.subtle { background:#f5f8f5; }
+    .btn.danger { color:#b13030; }
+    .btn.active { color:var(--green); background:var(--green-light); border-color:var(--green); }
+    .btn-row { display:flex; gap:8px; margin-top:9px; }
+    .btn-row .btn { flex:1; }
+    fieldset { border:0; padding:0; margin:0 0 15px; min-width:0; }
+    legend { padding:0; margin-bottom:8px; font-size:12px; font-weight:600; }
+    .categories { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .category { position:relative; margin:0; font-weight:500; cursor:pointer; }
+    .category input { position:absolute; opacity:0; }
+    .category span { display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:7px; padding:11px 8px; font-size:11px; white-space:nowrap; }
+    .category input:checked+span { border-color:var(--blue); color:#185b9f; background:#edf5fd; }
+    .category.orange input:checked+span { border-color:var(--orange); color:#96510a; background:#fff6ea; }
+    .category.green input:checked+span { border-color:var(--known); color:#14683f; background:#eaf7f0; }
+    .category:last-child { grid-column:1 / -1; }
+    .category input:focus-visible+span { outline:3px solid #68a89b; }
+    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+    .dot.orange { background:var(--orange); } .dot.green { background:var(--known); }
+    .form-message { font-size:12px; line-height:1.5; margin-top:10px; }
+    .form-message.error { color:#b13030; }
+    .search-results { margin:10px 0 0; padding:0; list-style:none; }
+    .search-results button { text-align:left; width:100%; background:#f5f8f5; color:var(--ink); border:1px solid var(--line); border-radius:6px; margin-bottom:5px; padding:10px; font-size:12px; line-height:1.5; }
+    .search-results button:hover { border-color:var(--green); }
+    .road-info { display:flex; align-items:center; justify-content:space-between; margin-bottom:13px; padding:11px 12px; background:#f5f8f5; border-radius:7px; font-size:12px; }
+    .road-info strong { color:var(--red); }
+    .export-stack { display:grid; gap:8px; }
+    .backup { border-top:1px solid var(--line); margin-top:16px; padding-top:13px; }
+    .text-btn { border:0; padding:4px 0; color:var(--green); background:transparent; font-size:11px; text-decoration:underline; text-underline-offset:3px; }
+    .inventory { padding:20px 24px; }
+    .inventory-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .inventory h2 { font-size:13px; margin:0; }
+    .count-badge { background:var(--green-light); color:var(--green); font-size:10px; border-radius:4px; padding:3px 6px; }
+    .empty { background:#f8faf8; border:1px dashed #d4dfd6; border-radius:8px; padding:22px 17px; text-align:center; }
+    .empty strong { display:block; font-size:12px; font-weight:500; }
+    .empty p { margin:7px 0 0; color:var(--muted); font-size:11px; line-height:1.6; }
+    .building-list { list-style:none; padding:0; margin:0; max-height:330px; overflow:auto; }
+    .building-row { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .building-select { flex:1; min-width:0; padding:0; border:0; text-align:left; background:transparent; color:var(--ink); }
+    .building-select strong { display:block; font-size:12px; font-weight:600; overflow-wrap:anywhere; }
+    .building-select small { display:block; margin-top:5px; color:var(--muted); font-size:10px; }
+    .road-inventory { margin-top:13px; }
+    .road-list { max-height:190px; }
+    .road-list .building-row:last-child { border-bottom:0; }
+    .line-dot { width:16px; height:0; border-top:3px dashed var(--red, #d43d3d); flex:none; }
+    .road-list .building-row.selected { background:#f6effc; border-radius:7px; padding-left:9px; padding-right:5px; box-shadow:inset 3px 0 0 #7a2bb8; }
+    .road-list .building-row.selected .line-dot { border-top:4px solid #7a2bb8; }
+    .road-list .building-row.selected strong { color:#5f1f93; }
+    .road-list .building-row.selected small { color:#7a2bb8; }
+    .delete-btn { border:0; padding:8px; border-radius:5px; color:#778780; background:transparent; }
+    .delete-btn:hover { background:#fff0f0; color:#b13030; }
+    .delete-btn svg { width:15px; height:15px; display:block; }
+    .save-footer { border-top:1px solid var(--line); padding:13px 24px; font-size:10px; color:var(--muted); background:#fcfdfb; line-height:1.5; }
+    .save-footer span::before { content:''; display:inline-block; width:6px; height:6px; margin-right:7px; border-radius:50%; background:#5c8a72; }
+    .save-footer.warning { color:#a04a16; }
+    .save-footer.warning span::before { background:#d87916; }
+    .map-area { position:relative; min-width:0; min-height:0; background:#e8eee7; }
+    #map { height:100%; width:100%; z-index:0; background:#e8eee7; }
+    .map-top { position:absolute; z-index:700; top:24px; left:24px; right:24px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; pointer-events:none; }
+    .location-chip { display:flex; align-items:center; gap:12px; background:#fff; border:1px solid #dce4de; border-radius:9px; padding:12px 16px; box-shadow:0 3px 14px #1e3c3310; color:var(--ink); text-align:left; pointer-events:auto; }
+    .location-chip svg { width:18px; height:18px; color:var(--green); }
+    .location-chip strong { font-size:13px; display:block; font-weight:600; }
+    .location-chip small { display:block; font-size:10px; color:var(--muted); margin-top:3px; }
+    .map-actions { display:flex; gap:7px; pointer-events:auto; }
+    .map-actions .btn { box-shadow:0 3px 14px #1e3c3310; background:#fff; }
+    .mode-banner { position:absolute; top:100px; left:24px; right:24px; margin:auto; max-width:530px; z-index:750; display:flex; align-items:center; gap:12px; border:1px solid #b7cfc3; border-radius:8px; background:#fff; padding:12px 15px; font-size:12px; box-shadow:0 5px 20px #18382b20; line-height:1.5; }
+    .mode-banner button { margin-left:auto; border:0; background:var(--green-light); color:var(--green); padding:7px 9px; border-radius:5px; flex-shrink:0; }
+    .map-legend { padding:15px 17px; border:1px solid #dce4de; background:#fff; border-radius:9px; box-shadow:0 3px 14px #1e3c3310; color:var(--ink); font-family:Segoe UI,Arial,sans-serif; }
+    .legend-heading { font-size:9px; letter-spacing:1.5px; font-weight:700; color:#718078; margin-bottom:12px; }
+    .legend-row { display:flex; align-items:center; gap:10px; margin-top:9px; font-size:11px; white-space:nowrap; }
+    .legend-pin { display:inline-block; width:10px; height:13px; background:var(--blue); border-radius:6px 6px 6px 0; transform:rotate(-45deg); margin:0 5px 0 2px; }
+    .legend-pin.orange { background:var(--orange); } .legend-pin.green { background:var(--known); }
+    .legend-line { width:18px; height:0; border-top:3px dashed var(--red); }
+    .leaflet-bottom.leaflet-left { margin:0 0 19px 14px; }
+    .leaflet-top.leaflet-right { top:88px; right:14px; }
+    .leaflet-bar { border:1px solid #d4ddd5 !important; box-shadow:0 3px 14px #1e3c3310 !important; border-radius:7px !important; overflow:hidden; }
+    .leaflet-bar a { width:34px !important; height:34px !important; line-height:34px !important; color:var(--ink) !important; }
+    .leaflet-control-attribution { font-size:10px !important; }
+    .building-marker { background:none; border:0; }
+    .pin { display:block; width:28px; height:34px; }
+    .pin svg { display:block; overflow:visible; }
+    .leaflet-popup-content { font-family:Segoe UI,Arial,sans-serif; color:var(--ink); line-height:1.5; }
+    .popup-title { margin:0 0 7px; font-size:14px; overflow-wrap:anywhere; }
+    .popup-category { display:inline-block; font-size:11px; padding:3px 7px; border-radius:4px; background:#edf5fd; color:#185b9f; }
+    .popup-category.orange { background:#fff6ea; color:#96510a; } .popup-category.green { background:#eaf7f0; color:#14683f; }
+    .popup-notes { white-space:pre-wrap; overflow-wrap:anywhere; margin:10px 0; }
+    .popup-coords { font-size:10px; color:var(--muted); margin-top:8px; }
+    .toast { position:absolute; bottom:35px; left:50%; transform:translateX(-50%); z-index:1200; background:#213c3a; color:#fff; padding:12px 16px; border-radius:8px; box-shadow:0 5px 20px #18382b25; max-width:calc(100% - 40px); width:max-content; font-size:12px; line-height:1.5; }
+    .toast.error { background:#9d3430; }
+    .toast button { border:0; background:transparent; color:#fff; text-decoration:underline; font-weight:600; margin-left:12px; }
+    .map-notice { position:absolute; z-index:760; top:100px; left:24px; right:80px; max-width:590px; padding:12px 15px; background:#fff4df; color:#7b4a14; border:1px solid #e9d3ab; border-radius:8px; font-size:12px; line-height:1.5; }
+    .map-notice button { font-size:12px; margin-left:8px; }
+    .busy-overlay { position:fixed; inset:0; z-index:5000; background:#f8faf8bb; display:grid; place-items:center; }
+    .busy-overlay div { padding:23px 30px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 40px #213c3a20; font-weight:600; }
+    #map.drawing,#map.picking { cursor:crosshair; }
+    #map.drawing .leaflet-marker-pane *,#map.drawing .leaflet-overlay-pane *,#map.picking .leaflet-marker-pane * { pointer-events:none !important; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (max-width:950px) { .app { grid-template-columns:340px minmax(0,1fr); } .brand,.inventory { padding-left:20px; padding-right:20px; } summary { padding-left:20px; padding-right:20px; } .section-body { padding-left:20px; padding-right:20px; } .map-top { top:16px; left:16px; right:16px; } .location-chip { padding:10px; } .map-actions { flex-direction:column; } .map-actions .btn { min-height:32px; padding:7px 10px; } .leaflet-top.leaflet-right { top:99px; right:6px; } }
+    @media (max-width:680px) { .app { display:flex; flex-direction:column-reverse; height:auto; min-height:100dvh; } .map-area { height:57dvh; min-height:360px; position:sticky; top:0; z-index:1200; border-bottom:1px solid var(--line); } .sidebar { min-height:43dvh; border-right:0; } .side-scroll { overflow:visible; } .brand { padding-top:18px; } .stats { margin-top:15px; } .map-legend { padding:10px 12px; } .legend-heading { margin-bottom:7px; } .legend-row { font-size:10px; margin-top:7px; } .leaflet-bottom.leaflet-left { margin:0 0 17px 6px; } .mode-banner { top:99px; left:12px; right:53px; font-size:11px; padding:9px; } .map-notice { left:12px; right:53px; font-size:11px; } .toast { bottom:25px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" aria-label="Controlli e archivio edifici">
+    <header class="brand">
+      <div class="eyebrow">Rilievi sul territorio</div>
+      <div class="brand-title"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21V8l7-4v17M10 10l6-4v15M16 12l5-2v11M2 21h20M6 10v2m0 3v2m7-5v2m0 3v2m6-5v3"/></svg></div><h1>City Tracker</h1></div>
+      <p>Edifici, sopralluoghi e strade percorse.<br>Il tuo archivio di lavoro, sulla mappa.</p>
+      <div class="stats" aria-label="Riepilogo">
+        <div class="stat"><strong id="worked-count" class="blue-text">0</strong><small>Già lavorati</small></div>
+        <div class="stat"><strong id="similar-count" class="orange-text">0</strong><small>Supposti simili</small></div>
+        <div class="stat"><strong id="known-count" class="green-text">0</strong><small>A conoscenza</small></div>
+        <div class="stat"><strong id="roads-count">0</strong><small>Strade percorse</small></div>
+      </div>
+    </header>
+    <div class="side-scroll">
+      <details class="section" id="add-section" open>
+        <summary><span class="section-number">01</span> Aggiungi edificio</summary>
+        <div class="section-body">
+          <form id="building-form">
+            <div class="field"><label for="address">Indirizzo</label><input id="address" name="address" type="text" required maxlength="300" placeholder="Es. Via Roma 10, Torino" autocomplete="street-address"></div>
+            <fieldset><legend>Categoria</legend><div class="categories">
+              <label class="category"><input type="radio" name="category" value="worked" checked><span><i class="dot" aria-hidden="true"></i>Già lavorato</span></label>
+              <label class="category orange"><input type="radio" name="category" value="similar"><span><i class="dot orange" aria-hidden="true"></i>Supposto simile</span></label>
+              <label class="category green"><input type="radio" name="category" value="known"><span><i class="dot green" aria-hidden="true"></i>Di cui siamo a conoscenza</span></label>
+            </div></fieldset>
+            <div class="field">
+              <button type="button" class="btn subtle full" id="pick-location" aria-pressed="false">⌖ &nbsp; Scegli il punto sulla mappa</button>
+              <div class="coords"><div><label for="latitude">Latitudine <span class="optional">(opz.)</span></label><input id="latitude" type="text" inputmode="decimal" placeholder="45.07030" aria-describedby="coord-hint"></div><div><label for="longitude">Longitudine <span class="optional">(opz.)</span></label><input id="longitude" type="text" inputmode="decimal" placeholder="7.68690" aria-describedby="coord-hint"></div></div>
+              <p class="hint" id="coord-hint">Le coordinate hanno precedenza sull’indirizzo. Senza coordinate, cerca l’indirizzo e scegli un risultato.</p>
+            </div>
+            <div class="field"><label for="notes">Note <span class="optional">(opzionali)</span></label><textarea id="notes" maxlength="5000" placeholder="Tipologia, interventi, osservazioni…" rows="2"></textarea></div>
+            <button type="submit" class="btn primary full" id="add-building">+ &nbsp; Aggiungi edificio</button>
+            <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
+            <ul class="search-results" id="search-results" aria-label="Indirizzi trovati"></ul>
+            <p class="hint">La ricerca invia solo l’indirizzo a <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / komoot</a> (dati OpenStreetMap). Nessun invio se scegli il punto o inserisci le coordinate.</p>
+          </form>
+        </div>
+      </details>
+      <details class="section" id="roads-section" open>
+        <summary><span class="section-number">02</span> Strade percorse</summary>
+        <div class="section-body">
+          <div class="road-info"><span id="road-status">Nessun tracciamento attivo</span><strong id="road-distance">0 m</strong></div>
+          <button class="btn full" id="start-road">↗ &nbsp; Inizia tracciamento</button>
+          <button class="btn primary full" id="finish-road" hidden>✓ &nbsp; Fine tracciamento</button>
+          <div class="btn-row" id="draft-actions" hidden><button class="btn" id="undo-point">Togli punto</button><button class="btn danger" id="cancel-road">Annulla</button></div>
+          <div class="road-inventory" id="road-inventory" hidden><span class="field-label">Strade salvate</span><ul class="building-list road-list" id="road-list"></ul></div>
+          <p class="hint">Clicca lungo la strada per aggiungere i punti. Ogni tracciamento crea un segmento separato. Clicca una strada nell’elenco o sulla mappa per evidenziarla in viola, poi eliminala con il cestino.</p>
+        </div>
+      </details>
+      <details class="section" id="export-section" open>
+        <summary><span class="section-number">03</span> Esportazione</summary>
+        <div class="section-body">
+          <div class="export-stack"><button class="btn primary full" id="export-all">↓ &nbsp; Esporta tutto (PNG)</button><button class="btn full" id="export-buildings">↓ &nbsp; Esporta solo edifici (PNG)</button></div>
+          <p class="hint">Esporta l’area visibile con la legenda. Usa «Inquadra tutto» per includere tutti i rilievi.</p>
+          <div class="backup"><span class="field-label">Backup e scambio dati</span><div class="btn-row"><button class="btn" id="geojson-all">GeoJSON · tutto</button><button class="btn" id="geojson-buildings">Solo edifici</button></div><button class="text-btn" id="import-data" style="margin-top:9px">Importa backup GeoJSON</button><input type="file" id="import-file" accept=".geojson,.json,application/geo+json,application/json" hidden><p class="hint">Il GeoJSON conserva coordinate, categorie, note e strade. È disponibile anche se il PNG non riesce.</p></div>
+        </div>
+      </details>
+      <details class="section" id="settings-section">
+        <summary><span class="section-number">04</span> Impostazioni mappa</summary>
+        <div class="section-body">
+          <form id="settings-form">
+            <p class="hint">Scegli il centro da usare all’apertura e con «Torna al centro». Il valore predefinito è il Quadrilatero Romano, con i quartieri vicini visibili.</p>
+            <div class="coords field"><div><label for="home-latitude">Latitudine del centro</label><input id="home-latitude" type="text" inputmode="decimal" required placeholder="45.07538"></div><div><label for="home-longitude">Longitudine del centro</label><input id="home-longitude" type="text" inputmode="decimal" required placeholder="7.67970"></div></div>
+            <div class="field"><label for="home-zoom">Zoom iniziale <span class="optional">(da 2 a 19)</span></label><input id="home-zoom" type="number" min="2" max="19" step="1" required value="14" aria-describedby="zoom-hint"><p class="hint" id="zoom-hint">Un valore più basso mostra più territorio. 14 offre una vista ampia del centro e dei dintorni.</p></div>
+            <button type="submit" class="btn primary full">Applica e centra la mappa</button>
+            <button type="button" class="text-btn" id="reset-center" style="margin-top:10px">Ripristina Quadrilatero e zoom ampio</button>
+            <div id="settings-message" class="form-message" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+      </details>
+      <section class="inventory" aria-label="Elenco edifici"><div class="inventory-title"><h2>Edifici in archivio</h2><span class="count-badge" id="building-count">0 edifici</span></div><div class="empty" id="empty-state"><strong>Il prossimo rilievo parte da qui</strong><p>Aggiungi un indirizzo oppure scegli<br>un punto sulla mappa.</p></div><ul class="building-list" id="building-list"></ul></section>
+    </div>
+    <footer class="save-footer" id="save-footer"><span id="save-status" role="status">Salvataggio automatico in questo browser</span></footer>
+  </aside>
+  <main class="map-area" aria-label="Mappa dei rilievi">
+    <div id="map" aria-label="Mappa interattiva: Quadrilatero Romano e dintorni"></div>
+    <div class="map-top"><button type="button" class="location-chip" id="open-settings" aria-label="Apri impostazioni mappa" title="Modifica il centro e lo zoom iniziale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span><strong id="location-title">Quadrilatero Romano</strong><small id="location-subtitle">Torino · Impostazioni mappa ⚙</small></span></button><div class="map-actions"><button class="btn" id="fit-all" title="Inquadra tutti gli edifici e tutte le strade">⌗ &nbsp; Inquadra tutto</button><button class="btn" id="go-home">Torna al centro ↗</button></div></div>
+    <div class="mode-banner" id="mode-banner" hidden><span id="mode-text"></span><button id="exit-mode">Annulla</button></div>
+    <div class="map-notice" id="map-notice" role="alert" hidden><span id="map-notice-text"></span><button class="text-btn" id="retry-map">Riprova</button></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+</div>
+<div class="busy-overlay" id="busy-overlay" role="status" hidden><div>Preparazione dell’immagine…</div></div>
+<noscript>Per usare City Tracker, abilita JavaScript nel browser.</noscript>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+<script>
+(() => {
+  'use strict';
+  // Stato applicativo e validazione: i testi dell’utente entrano nel DOM solo come testo.
+  // Il nome della chiave è quello storico (il programma si chiamava «Mappa edifici»): non cambiarlo, altrimenti
+  // gli archivi già salvati nei browser degli utenti risulterebbero vuoti.
+  const STORAGE_KEY = 'mappa_edifici_v1';
+  const DEFAULT_CENTER = [45.07538, 7.67970];
+  const defaultSettings = () => ({ center:[...DEFAULT_CENTER], zoom:14 });
+  const COLORS = { worked: '#2476cf', similar: '#d87916', known: '#1f9d62', road: '#d43d3d', roadSelected: '#7a2bb8' };
+  const LABELS = { worked: 'Già lavorato', similar: 'Supposto simile', known: 'Di cui siamo a conoscenza' };
+  // Classe CSS di colore per categoria (il blu è il colore base e non ha classe). Usata da lista, popup e legenda.
+  const CATEGORY_CLASS = { worked: '', similar: 'orange', known: 'green' };
+  const categoryClass = category => CATEGORY_CLASS[category] ? ' ' + CATEGORY_CLASS[category] : '';
+  // I server volontari di OpenStreetMap vietano l’uso da parte di app distribuite e rispondono 403
+  // («Access blocked»). Si usano CDN cartografici pensati per questo scopo, con ricambio automatico.
+  const TILE_PROVIDERS = [
+    { id:'osmde', url:'https://tile.openstreetmap.de/{z}/{x}/{y}.png', maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &middot; tile FOSSGIS e.V.',
+      credit:'© OpenStreetMap contributors · tile FOSSGIS e.V.' },
+    { id:'osmfr', url:'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', subdomains:'abc', maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &middot; tile OSM France',
+      credit:'© OpenStreetMap contributors · tile OSM France' },
+    { id:'esri', url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', maxZoom:19,
+      attribution:'Cartografia <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; OpenStreetMap contributors',
+      credit:'Cartografia Esri · © OpenStreetMap contributors' }
+  ];
+  let providerIndex = 0, providerErrors = 0;
+  const provider = () => TILE_PROVIDERS[providerIndex];
+  const $ = id => document.getElementById(id);
+  const uid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 11);
+  const emptyState = () => ({ version: 1, buildings: [], roads: [], draft: null, settings:defaultSettings() });
+  let state = emptyState(), map, tiles, buildingsLayer, roadsLayer, draftLayer, previewMarker;
+  let drawing = false, picking = false, exporting = false, searching = false;
+  let selectedRoadId = null; // Selezione effimera: evidenzia la strada, non viene salvata.
+  let storageReady = true, storageMessage = '', toastTimer, searchAbort, searchSequence = 0;
+  let searchRequestTime = 0, markers = new Map();
+  const searchCache = new Map();
+  const finite = n => typeof n === 'number' && Number.isFinite(n);
+  const validPoint = p => Array.isArray(p) && p.length >= 2 && finite(p[0]) && finite(p[1]) && Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180;
+  const validText = (s, max) => typeof s === 'string' && s.length <= max;
+  const pointCopy = p => [p[0], p[1]];
+
+  function validateSettings(value) {
+    if (!value || !validPoint(value.center) || Math.abs(value.center[0]) > 85.05112878) throw new Error('Inserisci un centro valido: latitudine tra −85.05112878 e 85.05112878, longitudine tra −180 e 180.');
+    if (!Number.isInteger(value.zoom) || value.zoom < 2 || value.zoom > 19) throw new Error('Lo zoom deve essere un numero intero tra 2 e 19.');
+    return { center:pointCopy(value.center), zoom:value.zoom };
+  }
+
+  function validateState(value) {
+    if (!value || value.version !== 1 || !Array.isArray(value.buildings) || !Array.isArray(value.roads)) throw new Error('Formato del backup non riconosciuto.');
+    const result = emptyState(), ids = new Set();
+    const uniqueId = id => { const next = typeof id === 'string' && id.length <= 100 && !ids.has(id) ? id : uid(); ids.add(next); return next; };
+    result.buildings = value.buildings.map(b => {
+      if (!b || !validText(b.address, 300) || !b.address.trim() || !validText(b.notes ?? '', 5000) || !Object.hasOwn(LABELS, b.category) || !validPoint([b.lat, b.lng])) throw new Error('Il backup contiene un edificio non valido.');
+      return { id: uniqueId(b.id), address: b.address, lat: b.lat, lng: b.lng, category: b.category, notes: b.notes || '' };
+    });
+    function validateRoad(r, min) {
+      if (!r || !Array.isArray(r.points) || r.points.length < min || !r.points.every(validPoint)) throw new Error('Il backup contiene una strada non valida.');
+      return { id: uniqueId(r.id), points: r.points.map(pointCopy) };
+    }
+    result.roads = value.roads.map(r => validateRoad(r, 2));
+    if (value.draft) result.draft = validateRoad(value.draft, 0);
+    // Gli archivi precedenti mantengono i rilievi e adottano il nuovo centro iniziale.
+    if (value.settings !== undefined) result.settings = validateSettings(value.settings);
+    return result;
+  }
+
+  // localStorage può essere disabilitato dalle impostazioni aziendali o dal browser.
+  function storageWarning(message) {
+    storageMessage = message;
+    $('save-footer').classList.add('warning');
+    $('save-status').textContent = message;
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try { state = validateState(JSON.parse(raw)); }
+        catch (error) { storageReady = false; storageWarning('Archivio non leggibile: conservato senza sovrascriverlo. Esporta i nuovi dati in GeoJSON.'); }
+      }
+    } catch (error) { storageWarning('Salvataggio locale non disponibile. Conserva un backup GeoJSON.'); }
+  }
+  function saveState() {
+    if (!storageReady) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      $('save-footer').classList.remove('warning');
+      $('save-status').textContent = 'Salvato in questo browser · ' + new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+      storageMessage = '';
+    } catch (error) { storageWarning('Salvataggio non riuscito. Esporta un backup GeoJSON prima di chiudere.'); }
+  }
+  function toast(message, error = false, action) {
+    clearTimeout(toastTimer);
+    const node = $('toast'); node.replaceChildren(document.createTextNode(message)); node.hidden = false; node.classList.toggle('error', error);
+    if (action) { const button = document.createElement('button'); button.textContent = 'Annulla'; button.onclick = () => { action(); node.hidden = true; }; node.append(button); }
+    toastTimer = setTimeout(() => { node.hidden = true; }, error ? 12000 : 6500);
+  }
+  function formMessage(message = '', error = false) { $('form-message').textContent = message; $('form-message').classList.toggle('error', error); }
+  function showMapNotice(message) { $('map-notice-text').textContent = message; $('map-notice').hidden = false; }
+
+  // Centro configurabile: gli spostamenti temporanei non cambiano le impostazioni.
+  function renderSettings() {
+    $('home-latitude').value = String(state.settings.center[0]); $('home-longitude').value = String(state.settings.center[1]); $('home-zoom').value = state.settings.zoom;
+    const isQuadrilatero = state.settings.center.every((n,i) => Math.abs(n-DEFAULT_CENTER[i]) < .000001);
+    $('location-title').textContent = isQuadrilatero ? 'Quadrilatero Romano' : 'Centro personalizzato';
+    $('location-subtitle').textContent = isQuadrilatero ? 'Torino · Impostazioni mappa ⚙' : 'Modifica coordinate e zoom ⚙';
+    $('map').setAttribute('aria-label', 'Mappa interattiva · Centro: ' + state.settings.center.join(', '));
+    $('settings-message').textContent = ''; $('settings-message').classList.remove('error');
+  }
+  function goHome() { if (map && !exporting) { map.closePopup(); map.setView(state.settings.center,state.settings.zoom); } }
+  function applySettings(settings) {
+    cancelSearch(); searchCache.clear(); state.settings = validateSettings(settings); renderSettings(); saveState(); goHome();
+    $('settings-message').textContent = storageMessage ? 'Centro applicato. ' + storageMessage : 'Centro e zoom salvati: verranno usati anche alla riapertura.';
+    $('settings-message').classList.toggle('error',Boolean(storageMessage));
+  }
+  $('settings-form').onsubmit = event => {
+    event.preventDefault(); if (exporting) return;
+    try { applySettings({ center:readCoordinates('home-latitude','home-longitude',false), zoom:Number($('home-zoom').value) }); }
+    catch (error) { $('settings-message').textContent = error.message; $('settings-message').classList.add('error'); }
+  };
+  $('reset-center').onclick = () => { if (!exporting) applySettings(defaultSettings()); };
+  $('open-settings').onclick = () => { $('settings-section').open = true; $('settings-section').scrollIntoView({ block:'start',behavior:'smooth' }); $('home-latitude').focus({ preventScroll:true }); };
+
+  // Pin numerati e popup sicuri. Nessuna immagine di marker da scaricare.
+  function markerIcon(category, number) {
+    return L.divIcon({ className:'building-marker', iconSize:[28,34], iconAnchor:[14,34], popupAnchor:[0,-32], html:`<span class="pin"><svg width="28" height="34" viewBox="0 0 28 34" xmlns="http://www.w3.org/2000/svg"><path d="M14 33C11 29 1 21 1 14a13 13 0 0 1 26 0c0 7-10 15-13 19Z" fill="${COLORS[category]}" stroke="white" stroke-width="2"/><text x="14" y="18" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="${number > 99 ? 9 : 11}" font-weight="bold">${number}</text></svg></span>` });
+  }
+  function popupFor(building) {
+    const box = document.createElement('div'), title = document.createElement('h3'), category = document.createElement('span'), coords = document.createElement('div');
+    title.className = 'popup-title'; title.textContent = building.address;
+    category.className = 'popup-category' + categoryClass(building.category); category.textContent = LABELS[building.category];
+    box.append(title, category);
+    if (building.notes) { const notes = document.createElement('p'); notes.className = 'popup-notes'; notes.textContent = building.notes; box.append(notes); }
+    coords.className = 'popup-coords'; coords.textContent = building.lat.toFixed(6) + ', ' + building.lng.toFixed(6); box.append(coords);
+    return box;
+  }
+  function renderBuildings() {
+    if (buildingsLayer) buildingsLayer.clearLayers(); markers.clear(); $('building-list').replaceChildren();
+    state.buildings.forEach((b, index) => {
+      if (map) {
+        const marker = L.marker([b.lat, b.lng], { icon:markerIcon(b.category, index + 1), title:b.address, alt:LABELS[b.category] + ': ' + b.address, keyboard:true });
+        marker.bindPopup(popupFor(b), { maxWidth:300 }).addTo(buildingsLayer); markers.set(b.id, marker);
+      }
+      const row = document.createElement('li'), dot = document.createElement('i'), select = document.createElement('button'), title = document.createElement('strong'), sub = document.createElement('small'), remove = document.createElement('button');
+      row.className = 'building-row'; dot.className = 'dot' + categoryClass(b.category); dot.setAttribute('aria-hidden', 'true');
+      select.className = 'building-select'; title.textContent = (index + 1) + '. ' + b.address; sub.textContent = LABELS[b.category]; select.append(title, sub);
+      select.onclick = () => { if (!map || exporting) return; map.setView([b.lat,b.lng], Math.max(16,map.getZoom())); markers.get(b.id).openPopup(); };
+      remove.className = 'delete-btn'; remove.title = 'Elimina ' + b.address; remove.setAttribute('aria-label', 'Elimina ' + b.address);
+      remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7"/></svg>';
+      remove.onclick = () => {
+        if (exporting) return;
+        const position = state.buildings.findIndex(item => item.id === b.id); if (position < 0) return;
+        state.buildings.splice(position,1); renderBuildings(); saveState();
+        toast('Edificio eliminato.', false, () => { state.buildings.splice(Math.min(position,state.buildings.length),0,b); renderBuildings(); saveState(); });
+      };
+      row.append(dot, select, remove); $('building-list').append(row);
+    });
+    const count = category => state.buildings.filter(b => b.category === category).length;
+    $('worked-count').textContent = count('worked'); $('similar-count').textContent = count('similar'); $('known-count').textContent = count('known');
+    $('building-count').textContent = state.buildings.length + (state.buildings.length === 1 ? ' edificio' : ' edifici'); $('empty-state').hidden = state.buildings.length > 0;
+  }
+
+  // Coordinate manuali, selezione sulla mappa e geocodifica esplicita via Photon.
+  function cancelSearch() {
+    searchSequence++; if (searchAbort) searchAbort.abort(); searching = false; $('add-building').disabled = false; $('add-building').textContent = '+  Aggiungi edificio'; $('search-results').replaceChildren(); formMessage();
+  }
+  function setPicking(active) {
+    if (!map || exporting) return;
+    if (active && drawing) { toast('Termina o annulla prima il tracciamento della strada.', true); return; }
+    if (active) map.closePopup();
+    picking = active; $('map').classList.toggle('picking', picking); $('pick-location').classList.toggle('active', picking); $('pick-location').setAttribute('aria-pressed', String(picking));
+    $('pick-location').textContent = picking ? 'Annulla scelta del punto' : '⌖  Scegli il punto sulla mappa'; updateMode();
+  }
+  function choosePoint(lat,lng) {
+    $('latitude').value = lat.toFixed(6); $('longitude').value = lng.toFixed(6);
+    if (previewMarker) previewMarker.remove();
+    previewMarker = L.circleMarker([lat,lng], { radius:8, color:COLORS.worked, fillColor:'#fff', fillOpacity:1, weight:3 }).addTo(map);
+    setPicking(false); cancelSearch(); formMessage('Punto selezionato. Completa il modulo e aggiungi l’edificio.');
+  }
+  function readCoordinates(latitudeId = 'latitude', longitudeId = 'longitude', optional = true) {
+    const a = $(latitudeId).value.trim(), b = $(longitudeId).value.trim();
+    if (!a && !b && optional) return null;
+    if ((!a || !b) && !optional) throw new Error('Inserisci sia la latitudine sia la longitudine del centro.');
+    if (!a || !b) throw new Error('Inserisci entrambe le coordinate, oppure lascia vuoti tutti e due i campi.');
+    const pattern = /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/;
+    if (!pattern.test(a) || !pattern.test(b)) throw new Error('Usa coordinate decimali, ad esempio 45.07030 e 7.68690.');
+    const point = [Number(a.replace(',','.')),Number(b.replace(',','.'))];
+    if (!validPoint(point)) throw new Error('Latitudine da −90 a 90; longitudine da −180 a 180.');
+    return point;
+  }
+  function addBuilding(point) {
+    const address = $('address').value.trim();
+    if (!address) { formMessage('Inserisci un indirizzo per riconoscere l’edificio.',true); $('address').focus(); return; }
+    const b = { id:uid(), address, lat:point[0], lng:point[1], category:document.querySelector('input[name="category"]:checked').value, notes:$('notes').value.trim() };
+    state.buildings.push(b); cancelSearch(); setPicking(false);
+    if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+    const selectedCategory = b.category; $('building-form').reset(); document.querySelector(`input[name="category"][value="${selectedCategory}"]`).checked = true;
+    renderBuildings(); saveState();
+    if (map) { map.setView(point,Math.max(map.getZoom(),16)); markers.get(b.id).openPopup(); }
+    toast('Edificio aggiunto all’archivio.');
+  }
+  function photonLabel(feature) {
+    const p = feature.properties || {};
+    const street = [p.street,p.housenumber].filter(Boolean).join(' ');
+    return [...new Set([p.name,street,p.postcode,p.city || p.town || p.village,p.state,p.country].filter(Boolean))].join(', ');
+  }
+  async function searchAddress(address) {
+    if (Date.now() - searchRequestTime < 1500) { formMessage('Attendi un istante prima di ripetere la ricerca.',true); return; }
+    cancelSearch(); searching = true;
+    const sequence = searchSequence, key = address.toLocaleLowerCase('it');
+    $('add-building').disabled = true; $('add-building').textContent = 'Ricerca indirizzo…'; formMessage('Ricerca in corso. Le coordinate non vengono mai scelte automaticamente.');
+    searchAbort = new AbortController(); const timeout = setTimeout(() => searchAbort.abort(),12000);
+    try {
+      let features = searchCache.get(key);
+      if (!features) {
+        searchRequestTime = Date.now();
+        const url = new URL('https://photon.komoot.io/api/');
+        url.search = new URLSearchParams({ q:address, limit:'5', lat:String(state.settings.center[0]), lon:String(state.settings.center[1]) }).toString();
+        const response = await fetch(url, { signal:searchAbort.signal, credentials:'omit' });
+        if (!response.ok) throw new Error('Il servizio indirizzi non è disponibile al momento.');
+        const result = await response.json();
+        features = (result.features || []).filter(f => f.geometry && f.geometry.type === 'Point' && validPoint([f.geometry.coordinates?.[1],f.geometry.coordinates?.[0]]));
+        searchCache.set(key,features);
+      }
+      if (sequence !== searchSequence) return;
+      formMessage(features.length ? 'Scegli l’indirizzo corretto per aggiungere l’edificio:' : 'Nessun risultato. Specifica anche la città oppure scegli un punto sulla mappa.',!features.length);
+      features.forEach(feature => {
+        const li = document.createElement('li'), button = document.createElement('button'); button.type = 'button'; button.textContent = photonLabel(feature) || address;
+        button.onclick = () => addBuilding([feature.geometry.coordinates[1],feature.geometry.coordinates[0]]); li.append(button); $('search-results').append(li);
+      });
+    } catch (error) {
+      if (sequence === searchSequence) formMessage('Ricerca non riuscita. Controlla la connessione, inserisci le coordinate oppure scegli il punto sulla mappa.',true);
+    } finally {
+      clearTimeout(timeout);
+      if (sequence === searchSequence) { searching = false; $('add-building').disabled = false; $('add-building').textContent = '+  Aggiungi edificio'; }
+    }
+  }
+  $('building-form').addEventListener('submit',event => {
+    event.preventDefault(); if (exporting || searching) return;
+    if (drawing) { formMessage('Termina o annulla il tracciamento prima di aggiungere un edificio.',true); return; }
+    try {
+      const point = readCoordinates(); const address = $('address').value.trim();
+      if (!address) { formMessage('Inserisci un indirizzo.',true); return; }
+      if (point) addBuilding(point); else searchAddress(address);
+    } catch (error) { formMessage(error.message,true); }
+  });
+  ['address','latitude','longitude'].forEach(id => $(id).addEventListener('input',() => { cancelSearch(); if (previewMarker) { previewMarker.remove(); previewMarker = null; } }));
+  $('pick-location').onclick = () => setPicking(!picking);
+
+  // Strade: ogni click salva anche la bozza, recuperabile dopo una riapertura.
+  function roadLength(points) { let total = 0; if (map) for (let i=1;i<points.length;i++) total += map.distance(points[i-1],points[i]); return total; }
+  const formatDistance = m => m >= 1000 ? (m/1000).toLocaleString('it-IT',{ maximumFractionDigits:2 }) + ' km' : Math.round(m) + ' m';
+  function drawLine(points, draft = false, selected = false) {
+    return L.polyline(points,{ color:selected ? COLORS.roadSelected : COLORS.road, weight:selected ? 7 : 4, dashArray:selected ? null : '9 8', lineCap:'round', opacity:draft ? .8 : .95 });
+  }
+  // Selezione condivisa fra mappa ed elenco: cliccando in un punto si evidenzia anche nell’altro.
+  function selectRoad(id, fromMap = false) {
+    if (exporting) return;
+    selectedRoadId = selectedRoadId === id ? null : id;
+    renderRoads();
+    if (selectedRoadId && fromMap) {
+      $('roads-section').open = true;
+      const row = $('road-list').querySelector('.building-row.selected');
+      if (row) row.scrollIntoView({ block:'nearest', behavior:'smooth' });
+    }
+  }
+  function renderRoads() {
+    if (state.roads.every(road => road.id !== selectedRoadId)) selectedRoadId = null;
+    if (roadsLayer) {
+      roadsLayer.clearLayers();
+      state.roads.forEach((road,index) => {
+        const selected = road.id === selectedRoadId;
+        const line = drawLine(road.points, false, selected)
+          .bindTooltip('Strada ' + (index+1) + ' · ' + formatDistance(roadLength(road.points)) + (selected ? ' · selezionata' : ''))
+          .addTo(roadsLayer);
+        line.on('click', event => { L.DomEvent.stop(event); if (!drawing && !picking) selectRoad(road.id, true); });
+        if (selected) line.bringToFront();
+      });
+    }
+    if (draftLayer) {
+      draftLayer.clearLayers();
+      if (state.draft) {
+        if (state.draft.points.length > 1) drawLine(state.draft.points,true).addTo(draftLayer);
+        state.draft.points.forEach(p => L.circleMarker(p,{ radius:4, color:COLORS.road, fillColor:'#fff', fillOpacity:1, weight:2, interactive:false }).addTo(draftLayer));
+      }
+    }
+    $('roads-count').textContent = state.roads.length;
+    const points = state.draft?.points || [];
+    $('road-status').textContent = drawing ? points.length + (points.length === 1 ? ' punto inserito' : ' punti inseriti') : 'Nessun tracciamento attivo';
+    $('road-distance').textContent = formatDistance(drawing ? roadLength(points) : state.roads.reduce((sum,r) => sum + roadLength(r.points),0));
+    $('start-road').hidden = drawing; $('finish-road').hidden = !drawing; $('draft-actions').hidden = !drawing;
+    $('finish-road').disabled = points.length < 2; $('undo-point').disabled = !points.length;
+    renderRoadList();
+    $('map').classList.toggle('drawing',drawing); updateMode();
+  }
+
+  // Elenco delle strade salvate: ogni voce si inquadra sulla mappa o si elimina singolarmente.
+  function renderRoadList() {
+    const list = $('road-list'); list.replaceChildren();
+    $('road-inventory').hidden = !state.roads.length;
+    state.roads.forEach((road, index) => {
+      const row = document.createElement('li'), dot = document.createElement('i'), select = document.createElement('button'),
+            title = document.createElement('strong'), sub = document.createElement('small'), remove = document.createElement('button');
+      const selected = road.id === selectedRoadId;
+      row.className = 'building-row' + (selected ? ' selected' : ''); dot.className = 'line-dot'; dot.setAttribute('aria-hidden','true');
+      select.className = 'building-select'; select.setAttribute('aria-pressed', String(selected));
+      title.textContent = 'Strada ' + (index + 1);
+      sub.textContent = formatDistance(roadLength(road.points)) + ' · ' + road.points.length + (road.points.length === 1 ? ' punto' : ' punti') + (selected ? ' · selezionata' : '');
+      select.append(title, sub);
+      select.onclick = () => {
+        if (!map || exporting || !road.points.length) return;
+        const wasSelected = road.id === selectedRoadId;
+        selectRoad(road.id);
+        if (!wasSelected) map.fitBounds(L.latLngBounds(road.points), { padding:[40,40] });
+      };
+      remove.className = 'delete-btn'; remove.title = 'Elimina strada ' + (index + 1);
+      remove.setAttribute('aria-label','Elimina strada ' + (index + 1));
+      remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7"/></svg>';
+      remove.onclick = () => {
+        if (exporting || drawing) return;
+        const position = state.roads.findIndex(item => item.id === road.id); if (position < 0) return;
+        state.roads.splice(position,1); renderRoads(); saveState();
+        toast('Strada eliminata.', false, () => { state.roads.splice(Math.min(position,state.roads.length),0,road); renderRoads(); saveState(); });
+      };
+      row.append(dot, select, remove); list.append(row);
+    });
+  }
+  function updateMode() {
+    $('mode-banner').hidden = !drawing && !picking;
+    $('mode-text').textContent = drawing ? 'Tracciamento attivo · Clicca sulla mappa. Servono almeno 2 punti. Termina con «Fine tracciamento».' : 'Clicca sulla mappa per selezionare la posizione dell’edificio.';
+    if (map) { if (drawing || picking) map.doubleClickZoom.disable(); else map.doubleClickZoom.enable(); }
+  }
+  function startRoad() {
+    if (!map || exporting) return; cancelSearch(); setPicking(false); map.closePopup();
+    if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+    selectedRoadId = null;
+    state.draft = { id:uid(), points:[] }; drawing = true; $('roads-section').open = true; renderRoads(); saveState();
+  }
+  function finishRoad() {
+    if (!state.draft || state.draft.points.length < 2 || exporting) return;
+    state.roads.push(state.draft); state.draft = null; drawing = false; renderRoads(); saveState(); toast('Strada salvata. Puoi iniziare un nuovo segmento.');
+  }
+  function cancelRoad() {
+    if (!drawing || exporting) return;
+    const discarded = state.draft; state.draft = null; drawing = false; renderRoads(); saveState();
+    if (discarded.points.length) toast('Tracciamento annullato.',false,() => { if (drawing) return; setPicking(false); state.draft = discarded; drawing = true; renderRoads(); saveState(); });
+  }
+  $('start-road').onclick = startRoad; $('finish-road').onclick = finishRoad; $('cancel-road').onclick = cancelRoad;
+  $('undo-point').onclick = () => { if (state.draft && !exporting) { state.draft.points.pop(); renderRoads(); saveState(); } };
+  $('exit-mode').onclick = () => drawing ? cancelRoad() : setPicking(false);
+  document.addEventListener('keydown',event => { if (event.key === 'Escape' && !exporting) { if (picking) setPicking(false); else if (drawing) cancelRoad(); else if (selectedRoadId) selectRoad(selectedRoadId); } });
+
+  // GeoJSON: backup interoperabile e alternativa al PNG, con importazione validata.
+  function geojson(includeRoads) {
+    const features = state.buildings.map(b => ({ type:'Feature', id:b.id, geometry:{ type:'Point', coordinates:[b.lng,b.lat] }, properties:{ kind:'building', address:b.address, category:b.category, category_label:LABELS[b.category], notes:b.notes } }));
+    if (includeRoads) {
+      const roads = [...state.roads]; if (state.draft?.points.length >= 2) roads.push(state.draft);
+      roads.forEach(r => features.push({ type:'Feature', id:r.id, geometry:{ type:'LineString', coordinates:r.points.map(p => [p[1],p[0]]) }, properties:{ kind:'road', status:r === state.draft ? 'draft' : 'complete', stroke:COLORS.road } }));
+    }
+    return { type:'FeatureCollection', name:'City Tracker', app_version:1, exported_at:new Date().toISOString(), map_settings:validateSettings(state.settings), features };
+  }
+  function download(blob,name) {
+    const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = name; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),60000);
+  }
+  const fileStamp = () => new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  function exportGeoJSON(includeRoads) {
+    download(new Blob([JSON.stringify(geojson(includeRoads),null,2)],{ type:'application/geo+json' }), 'city-tracker-' + (includeRoads ? 'completo' : 'edifici') + '-' + fileStamp() + '.geojson');
+    toast('Backup GeoJSON esportato.' + (includeRoads && state.draft?.points.length === 1 ? ' Il punto singolo della bozza non forma ancora una strada.' : ''));
+  }
+  function parseImport(data) {
+    if (data?.version === 1) return validateState({ ...data,settings:data.settings === undefined ? state.settings : data.settings });
+    if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('Seleziona un backup GeoJSON esportato da questa app.');
+    const next = emptyState();
+    next.settings = validateSettings(data.map_settings === undefined ? state.settings : data.map_settings);
+    data.features.forEach(f => {
+      if (!f || f.type !== 'Feature' || !f.geometry || !f.properties) throw new Error('Il file contiene un elemento non valido.');
+      const p = f.properties, g = f.geometry;
+      if (g.type === 'Point' && p.kind === 'building' && Array.isArray(g.coordinates)) next.buildings.push({ id:f.id || uid(), address:p.address, notes:p.notes ?? '', category:p.category, lat:g.coordinates[1], lng:g.coordinates[0] });
+      else if (g.type === 'LineString' && p.kind === 'road' && Array.isArray(g.coordinates) && g.coordinates.every(c => Array.isArray(c) && c.length >= 2)) {
+        const road = { id:f.id || uid(), points:g.coordinates.map(c => [c[1],c[0]]) };
+        if (p.status === 'draft') { if (next.draft) throw new Error('Il backup contiene più bozze di strada.'); next.draft = road; } else next.roads.push(road);
+      } else throw new Error('Il GeoJSON contiene elementi non riconosciuti. Usa un backup di questa app.');
+    });
+    return validateState(next);
+  }
+  $('geojson-all').onclick = () => exportGeoJSON(true); $('geojson-buildings').onclick = () => exportGeoJSON(false);
+  $('import-data').onclick = () => { if (!exporting) $('import-file').click(); };
+  $('import-file').onchange = async event => {
+    const file = event.target.files[0]; if (!file) return;
+    try {
+      if (file.size > 20*1024*1024) throw new Error('Il file supera il limite di 20 MB.');
+      const next = parseImport(JSON.parse(await file.text()));
+      const count = next.buildings.length + ' edifici e ' + next.roads.length + ' strade' + (next.draft ? ', più una bozza' : '');
+      if (!window.confirm('Importare ' + count + '?\nIl backup sostituirà l’archivio attuale. Puoi esportarlo in GeoJSON prima di procedere.')) return;
+      cancelSearch(); setPicking(false); if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+      state = next; storageReady = true; drawing = Boolean(state.draft); renderSettings(); renderBuildings(); renderRoads(); saveState(); fitAll(); toast('Backup importato: ' + count + '.');
+    } catch (error) { toast(error instanceof SyntaxError ? 'Il file non contiene JSON valido. Nessun dato modificato.' : error.message,true); }
+    finally { event.target.value = ''; }
+  };
+
+  // PNG: ricomposizione delle sole tile visibili, senza trasformazioni CSS Leaflet.
+  // html2canvas acquisisce tile CORS, overlay canvas, legenda e attribuzione OSM.
+  // La mappa originale e le sue strade non vengono nascoste né modificate.
+  function legendElement(includeRoads = true) {
+    const legend = document.createElement('div'); legend.className = 'map-legend';
+    legend.innerHTML = '<div class="legend-heading">LEGENDA DEI RILIEVI</div><div class="legend-row"><i class="legend-pin" aria-hidden="true"></i>Già lavorato</div><div class="legend-row"><i class="legend-pin orange" aria-hidden="true"></i>Supposto simile</div><div class="legend-row"><i class="legend-pin green" aria-hidden="true"></i>Di cui siamo a conoscenza</div>' + (includeRoads ? '<div class="legend-row"><i class="legend-line" aria-hidden="true"></i>Strada percorsa</div>' : '');
+    return legend;
+  }
+  function paintPin(ctx,x,y,color,number) {
+    ctx.save(); ctx.translate(x-14,y-34); ctx.beginPath(); ctx.moveTo(14,33); ctx.bezierCurveTo(11,29,1,21,1,14); ctx.arc(14,14,13,Math.PI,0); ctx.bezierCurveTo(27,21,17,29,14,33); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = 'bold ' + (number>99 ? 9 : 11) + 'px Arial'; ctx.textAlign = 'center'; ctx.fillText(String(number),14,18); ctx.restore();
+  }
+  async function waitTiles() {
+    const started = Date.now();
+    while (tiles.isLoading()) { if (Date.now()-started > 15000) throw new Error('La cartografia non ha terminato il caricamento. Riprova o usa GeoJSON.'); await new Promise(resolve => setTimeout(resolve,150)); }
+  }
+  async function exportPNG(includeRoads) {
+    if (exporting) return;
+    if (!map || typeof html2canvas !== 'function') { toast('Libreria PNG non disponibile. Verifica Internet oppure usa i pulsanti GeoJSON.',true); return; }
+    if (drawing) { toast('Termina o annulla il tracciamento prima di esportare il PNG.',true); return; }
+    exporting = true; document.querySelector('.app').inert = true; $('busy-overlay').hidden = false; let stage;
+    try {
+      map.stop(); map.closePopup(); await waitTiles();
+      const rect = $('map').getBoundingClientRect(), width = Math.round(rect.width), height = Math.round(rect.height);
+      const visible = [...$('map').querySelectorAll('.leaflet-tile-pane img.leaflet-tile')].map(img => ({ img,rect:img.getBoundingClientRect() })).filter(t => t.rect.right>rect.left && t.rect.left<rect.right && t.rect.bottom>rect.top && t.rect.top<rect.bottom);
+      if (!visible.length || visible.some(t => !t.img.complete || !t.img.naturalWidth || t.img.dataset.failed === 'true')) throw new Error('Alcune parti della mappa non sono caricate. Attendi, usa «Riprova» oppure esporta GeoJSON.');
+      stage = document.createElement('div'); stage.setAttribute('aria-hidden','true'); Object.assign(stage.style,{ position:'fixed', left:'-20000px', top:'0', width:width+'px', height:height+'px', overflow:'hidden', background:'#e8eee7', fontFamily:'Arial,sans-serif' }); document.body.append(stage);
+      const tileCopies = visible.map(t => {
+        const img = new Image(); img.crossOrigin = 'anonymous'; Object.assign(img.style,{ position:'absolute', width:t.rect.width+'px', height:t.rect.height+'px', left:(t.rect.left-rect.left)+'px', top:(t.rect.top-rect.top)+'px', maxWidth:'none' }); stage.append(img);
+        return new Promise((resolve,reject) => { img.onload = resolve; img.onerror = () => reject(new Error('Il browser non consente di esportare la cartografia. Usa il backup GeoJSON.')); img.src = t.img.currentSrc || t.img.src; });
+      });
+      let tileTimeout; try { await Promise.race([Promise.all(tileCopies), new Promise((_,reject) => { tileTimeout = setTimeout(() => reject(new Error('Caricamento immagini scaduto. Riprova oppure esporta GeoJSON.')),15000); })]); } finally { clearTimeout(tileTimeout); }
+      const scale = Math.min(2,Math.sqrt(16000000/(width*height)));
+      const overlay = document.createElement('canvas'); overlay.width = Math.round(width*scale); overlay.height = Math.round(height*scale); Object.assign(overlay.style,{ position:'absolute',left:'0',top:'0',width:width+'px',height:height+'px' }); const ctx = overlay.getContext('2d'); ctx.scale(scale,scale);
+      if (includeRoads) {
+        ctx.strokeStyle = COLORS.road; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([9,8]);
+        state.roads.forEach(road => { ctx.beginPath(); road.points.forEach((p,index) => { const q = map.latLngToContainerPoint(p); if (!index) ctx.moveTo(q.x,q.y); else ctx.lineTo(q.x,q.y); }); ctx.stroke(); }); ctx.setLineDash([]);
+      }
+      // L’ordinamento verticale riproduce la sovrapposizione dei pin di Leaflet.
+      state.buildings.map((b,index) => ({ b,index,point:map.latLngToContainerPoint([b.lat,b.lng]) })).sort((a,b) => a.point.y-b.point.y).forEach(({ b,index,point }) => paintPin(ctx,point.x,point.y,COLORS[b.category],index+1));
+      stage.append(overlay);
+      const legend = legendElement(includeRoads); Object.assign(legend.style,{ position:'absolute',left:'24px',bottom:'32px',boxShadow:'none' }); stage.append(legend);
+      const title = document.createElement('div'); title.textContent = 'City Tracker · ' + (includeRoads ? 'Edifici e strade percorse' : 'Solo edifici'); Object.assign(title.style,{ position:'absolute',top:'20px',left:'24px',background:'#fff',border:'1px solid #dce4de',borderRadius:'7px',padding:'12px 15px',fontSize:'13px',fontWeight:'bold',color:'#213c3a' }); stage.append(title);
+      const credit = document.createElement('div'); credit.textContent = provider().credit + ' · openstreetmap.org/copyright | ' + new Date().toLocaleDateString('it-IT'); Object.assign(credit.style,{ position:'absolute',bottom:'0',left:'0',right:'0',background:'#ffffff',color:'#384b46',fontSize:'10px',padding:'5px 8px',textAlign:'right' }); stage.append(credit);
+      const canvas = await html2canvas(stage,{ useCORS:true,allowTaint:false,scale,backgroundColor:'#e8eee7',logging:false,imageTimeout:15000,width,height,windowWidth:Math.max(window.innerWidth,width),windowHeight:Math.max(window.innerHeight,height) });
+      const blob = await new Promise((resolve,reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Impossibile creare il PNG. Usa il backup GeoJSON.')),'image/png'));
+      download(blob,'city-tracker-' + (includeRoads ? 'completo' : 'edifici') + '-' + fileStamp() + '.png'); toast('PNG esportato con legenda e attribuzione cartografica.');
+    } catch (error) { toast(error.message || 'Esportazione PNG non riuscita. Usa i pulsanti GeoJSON.',true); $('export-section').open = true; }
+    finally { if (stage) stage.remove(); exporting = false; document.querySelector('.app').inert = false; $('busy-overlay').hidden = true; }
+  }
+  $('export-all').onclick = () => exportPNG(true); $('export-buildings').onclick = () => exportPNG(false);
+
+  // Avvio mappa e recupero automatico dell’archivio locale.
+  function fitAll() {
+    if (!map || exporting) return;
+    const points = state.buildings.map(b => [b.lat,b.lng]).concat(state.roads.flatMap(r => r.points),state.draft?.points || []);
+    if (points.length) map.fitBounds(L.latLngBounds(points),{ paddingTopLeft:[55,130],paddingBottomRight:[60,170],maxZoom:17 });
+    else { goHome(); toast('Aggiungi un edificio o una strada per inquadrare i rilievi.'); }
+  }
+  // Se un provider smette di rispondere (blocco o guasto), si passa al successivo senza perdere i dati.
+  function addTileLayer() {
+    if (tiles) tiles.remove();
+    const source = provider(); providerErrors = 0;
+    tiles = L.tileLayer(source.url,{ subdomains:source.subdomains || 'abc', maxZoom:source.maxZoom, attribution:source.attribution, crossOrigin:'anonymous', keepBuffer:2 }).addTo(map);
+    tiles.on('tileerror',event => {
+      event.tile.dataset.failed = 'true';
+      if (++providerErrors >= 4 && providerIndex < TILE_PROVIDERS.length - 1) {
+        providerIndex++; addTileLayer();
+        showMapNotice('La cartografia precedente non era disponibile: è stata caricata una mappa alternativa. I tuoi dati non sono stati toccati.');
+        return;
+      }
+      showMapNotice('Alcune parti della cartografia non sono disponibili. Controlla Internet e premi «Riprova».');
+    });
+    tiles.on('tileload',event => { delete event.tile.dataset.failed; });
+  }
+  function initMap() {
+    if (typeof L === 'undefined') {
+      showMapNotice('Mappa non caricata. Connettiti a Internet e premi «Riprova». I dati locali e i backup restano accessibili.'); $('pick-location').disabled = true; $('start-road').disabled = true; return;
+    }
+    map = L.map('map',{ center:state.settings.center,zoom:state.settings.zoom,minZoom:2,maxZoom:19,zoomControl:false,preferCanvas:true,zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false });
+    L.control.zoom({ position:'topright' }).addTo(map);
+    addTileLayer();
+    buildingsLayer = L.layerGroup().addTo(map); roadsLayer = L.layerGroup().addTo(map); draftLayer = L.layerGroup().addTo(map);
+    const Legend = L.Control.extend({ options:{ position:'bottomleft' },onAdd:() => { const node = legendElement(); L.DomEvent.disableClickPropagation(node); L.DomEvent.disableScrollPropagation(node); return node; } }); new Legend().addTo(map);
+    map.on('click',event => {
+      if (exporting) return;
+      const p = event.latlng.wrap(); if (!validPoint([p.lat,p.lng])) return;
+      if (picking) choosePoint(p.lat,p.lng);
+      else if (drawing && state.draft) {
+        const last = state.draft.points.at(-1); if (last && map.distance(last,[p.lat,p.lng]) < .5) return;
+        state.draft.points.push([p.lat,p.lng]); renderRoads(); saveState();
+      }
+    });
+    drawing = Boolean(state.draft); if (drawing) { $('roads-section').open = true; toast('Tracciamento recuperato. Puoi aggiungere punti o terminarlo.'); }
+    window.addEventListener('resize',() => map.invalidateSize());
+  }
+  $('fit-all').onclick = fitAll; $('go-home').onclick = goHome;
+  $('retry-map').onclick = () => { if (!map) { location.reload(); return; } $('map-notice').hidden = true; tiles.redraw(); };
+  window.addEventListener('pagehide',saveState);
+  loadState(); renderSettings(); initMap(); renderBuildings(); renderRoads();
+  if (storageMessage) storageWarning(storageMessage);
+})();
+</script>
+</body>
+</html>

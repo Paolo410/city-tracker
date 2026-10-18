@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Se usi City Tracker, citalo come segue."
+title: "City Tracker"
+type: software
+authors:
+  - family-names: Malugani
+    given-names: Paolo
+abstract: "Strumento web per censire edifici su mappa e tracciare i percorsi dei sopralluoghi. Funziona interamente nel browser, senza server."
+date-released: 2026-10-18
+license: MIT
+url: "https://paolo410.github.io/city-tracker/"
+repository-code: "https://github.com/Paolo410/city-tracker"
+keywords:
+  - mappe
+  - GeoJSON
+  - Leaflet
+  - OpenStreetMap
