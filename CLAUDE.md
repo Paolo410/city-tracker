@@ -25,7 +25,9 @@ L'utente finale non è tecnico: apre il sito e lavora. Servito da GitHub Pages
    dall'altra parte del mondo, spesso senza errori evidenti.
 7. **Gli export riflettono i dati, non lo stato di interazione.** L'evidenziazione viola di una
    strada selezionata non deve mai finire in un PNG.
-8. **Interfaccia, messaggi e commenti in italiano.**
+8. **Interfaccia bilingue (it/en) tramite il dizionario `I18N`**: nessuna stringa visibile letterale nel
+   codice o nel markup; ogni chiave esiste in entrambe le lingue. I commenti nel codice restano in italiano.
+   Il markup statico è in italiano e coincide con il dizionario `it` (è ciò che indicizzano i motori).
 9. **Non usare `tile.openstreetmap.org` come fonte primaria delle tile** senza verificarlo anche
    da `file://`: senza `Referer` risponde `403 Access blocked`. Ogni provider alternativo deve
    esporre `Access-Control-Allow-Origin: *`, altrimenti l'export PNG si rompe.
@@ -33,6 +35,11 @@ L'utente finale non è tecnico: apre il sito e lavora. Servito da GitHub Pages
     svuota gli archivi già salvati dagli utenti.
 11. **Se si cambia la versione di una libreria CDN, rigenerare l'hash `integrity`** nel tag:
     senza, o con un hash sbagliato, il browser blocca la libreria.
+12. **Non cambiare lingua automaticamente in base al browser.** Lo stesso indirizzo servirebbe lingue
+    diverse a utenti e crawler. La lingua è: `?lang=` > scelta salvata > italiano; ai browser non italiani
+    si fa solo un suggerimento. `canonical` e `hreflang` devono restare coerenti con questa regola.
+13. **Le categorie si salvano come chiave** (`worked`, `similar`, `known`), mai come etichetta tradotta:
+    i backup devono importarsi in qualsiasi lingua.
 
 ## Prima di modificare
 

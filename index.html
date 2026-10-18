@@ -4,8 +4,66 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#174d46">
-  <title>City Tracker · Rilievi sul territorio</title>
-  <meta name="description" content="City Tracker: strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi. I dati restano nel tuo browser.">
+  <title>City Tracker · Censisci edifici e percorsi su mappa</title>
+  <meta name="description" content="Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi in qualsiasi città. Nessun account: i dati restano nel tuo browser.">
+  <meta name="author" content="Paolo Malugani">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://paolo410.github.io/city-tracker/">
+  <link rel="alternate" hreflang="it" href="https://paolo410.github.io/city-tracker/">
+  <link rel="alternate" hreflang="en" href="https://paolo410.github.io/city-tracker/?lang=en">
+  <link rel="alternate" hreflang="x-default" href="https://paolo410.github.io/city-tracker/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='6'%20fill='%23174d46'/%3E%3Cpath%20d='M3%2021V8l7-4v17M10%2010l6-4v15M16%2012l5-2v11M2%2021h20'%20fill='none'%20stroke='%23fff'%20stroke-width='1.5'%20stroke-linecap='round'%20stroke-linejoin='round'%20transform='translate%283%203%29%20scale%28.75%29'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="City Tracker">
+  <meta property="og:title" content="City Tracker · Censisci edifici e percorsi su mappa">
+  <meta property="og:description" content="Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi in qualsiasi città. Nessun account: i dati restano nel tuo browser.">
+  <meta property="og:url" content="https://paolo410.github.io/city-tracker/">
+  <meta property="og:image" content="https://paolo410.github.io/city-tracker/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="City Tracker: mappa con edifici numerati e percorsi tracciati">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:locale:alternate" content="en_GB">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="City Tracker · Censisci edifici e percorsi su mappa">
+  <meta name="twitter:description" content="Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi in qualsiasi città. Nessun account: i dati restano nel tuo browser.">
+  <meta name="twitter:image" content="https://paolo410.github.io/city-tracker/og-image.jpg">
+  <meta name="twitter:image:alt" content="City Tracker: mappa con edifici numerati e percorsi tracciati">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://tile.openstreetmap.de" crossorigin>
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "City Tracker",
+  "url": "https://paolo410.github.io/city-tracker/",
+  "description": "Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi in qualsiasi città. / Free web tool to map buildings and track walked routes in any city.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any (web browser)",
+  "browserRequirements": "Requires JavaScript and an internet connection",
+  "inLanguage": [
+    "it",
+    "en"
+  ],
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "license": "https://opensource.org/licenses/MIT",
+  "datePublished": "2026-10-18",
+  "image": "https://paolo410.github.io/city-tracker/og-image.jpg",
+  "author": {
+    "@type": "Person",
+    "name": "Paolo Malugani",
+    "sameAs": [
+      "https://github.com/Paolo410"
+    ]
+  },
+  "sameAs": [
+    "https://github.com/Paolo410/city-tracker"
+  ]
+}</script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
   <style>
     /* Impaginazione e controlli: nessun font o asset locale necessario. */
@@ -21,6 +79,19 @@
     .app { display:grid; grid-template-columns:374px minmax(0,1fr); height:100vh; height:100dvh; }
     .sidebar { display:flex; flex-direction:column; min-height:0; background:#fff; border-right:1px solid var(--line); z-index:1100; }
     .brand { padding:27px 24px 20px; border-bottom:1px solid var(--line); }
+    .brand-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .lang-switch { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; flex-shrink:0; }
+    .lang-switch button { border:0; background:#fff; color:var(--muted); font-size:10px; font-weight:700; letter-spacing:1px; padding:6px 10px; }
+    .lang-switch button:hover { background:var(--green-light); }
+    .lang-switch button[aria-pressed="true"] { background:var(--green); color:#fff; }
+    .lang-switch button:focus-visible { outline-offset:-3px; }
+    .lang-suggest { display:flex; align-items:center; gap:10px; margin-top:14px; padding:9px 10px 9px 12px; background:var(--green-light); border-radius:8px; font-size:11px; line-height:1.45; }
+    .lang-suggest span { flex:1; }
+    .lang-suggest .go { border:0; background:var(--green); color:#fff; border-radius:5px; padding:6px 9px; font-size:11px; font-weight:600; white-space:nowrap; }
+    .lang-suggest .close { border:0; background:transparent; color:var(--muted); font-size:16px; line-height:1; padding:2px 5px; }
+    .about p { margin:0 0 11px; color:var(--muted); font-size:12px; line-height:1.65; }
+    .about p:last-child { margin-bottom:0; }
+    noscript .ns { max-width:640px; margin:0 auto; padding:28px 20px; font:14px/1.6 Segoe UI,Arial,sans-serif; color:var(--ink); }
     .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:2px; font-weight:700; color:var(--muted); }
     .brand-title { display:flex; align-items:center; gap:11px; margin:12px 0 8px; }
     .brand-mark { width:35px; height:35px; display:grid; place-items:center; background:var(--green); color:#fff; border-radius:10px; }
@@ -66,7 +137,7 @@
     .categories { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .category { position:relative; margin:0; font-weight:500; cursor:pointer; }
     .category input { position:absolute; opacity:0; }
-    .category span { display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:7px; padding:11px 8px; font-size:11px; white-space:nowrap; }
+    .category > span { display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:7px; padding:11px 8px; font-size:11px; white-space:nowrap; }
     .category input:checked+span { border-color:var(--blue); color:#185b9f; background:#edf5fd; }
     .category.orange input:checked+span { border-color:var(--orange); color:#96510a; background:#fff6ea; }
     .category.green input:checked+span { border-color:var(--known); color:#14683f; background:#eaf7f0; }
@@ -157,89 +228,98 @@
   </style>
 </head>
 <body>
+<noscript><div class="ns"><h2>City Tracker</h2><p lang="it">Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi. Per usarlo abilita JavaScript nel browser.</p><p lang="en">Free web tool to map buildings and track the routes you walk on site visits. Please enable JavaScript in your browser to use it.</p></div></noscript>
 <div class="app">
-  <aside class="sidebar" aria-label="Controlli e archivio edifici">
+  <aside class="sidebar" aria-label="Controlli e archivio edifici" data-i18n-attr="aria-label:aria.sidebar">
     <header class="brand">
-      <div class="eyebrow">Rilievi sul territorio</div>
+      <div class="brand-top"><div class="eyebrow" data-i18n="brand.eyebrow">Rilievi sul territorio</div><div class="lang-switch" role="group" aria-label="Lingua / Language"><button type="button" data-lang="it" lang="it" aria-pressed="true" title="Italiano">IT</button><button type="button" data-lang="en" lang="en" aria-pressed="false" title="English">EN</button></div></div>
       <div class="brand-title"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21V8l7-4v17M10 10l6-4v15M16 12l5-2v11M2 21h20M6 10v2m0 3v2m7-5v2m0 3v2m6-5v3"/></svg></div><h1>City Tracker</h1></div>
-      <p>Edifici, sopralluoghi e strade percorse.<br>Il tuo archivio di lavoro, sulla mappa.</p>
-      <div class="stats" aria-label="Riepilogo">
-        <div class="stat"><strong id="worked-count" class="blue-text">0</strong><small>Già lavorati</small></div>
-        <div class="stat"><strong id="similar-count" class="orange-text">0</strong><small>Supposti simili</small></div>
-        <div class="stat"><strong id="known-count" class="green-text">0</strong><small>A conoscenza</small></div>
-        <div class="stat"><strong id="roads-count">0</strong><small>Strade percorse</small></div>
+      <p data-i18n-html="brand.tagline">Edifici, sopralluoghi e strade percorse.<br>Il tuo archivio di lavoro, sulla mappa.</p>
+      <div class="lang-suggest" id="lang-suggest" lang="en" hidden><span>This tool is also available in English.</span><button type="button" class="go" id="lang-suggest-go">Switch to English</button><button type="button" class="close" id="lang-suggest-close" aria-label="Dismiss">×</button></div>
+      <div class="stats" aria-label="Riepilogo" data-i18n-attr="aria-label:aria.stats">
+        <div class="stat"><strong id="worked-count" class="blue-text">0</strong><small data-i18n="stat.worked">Già lavorati</small></div>
+        <div class="stat"><strong id="similar-count" class="orange-text">0</strong><small data-i18n="stat.similar">Supposti simili</small></div>
+        <div class="stat"><strong id="known-count" class="green-text">0</strong><small data-i18n="stat.known">A conoscenza</small></div>
+        <div class="stat"><strong id="roads-count">0</strong><small data-i18n="stat.roads">Strade percorse</small></div>
       </div>
     </header>
     <div class="side-scroll">
       <details class="section" id="add-section" open>
-        <summary><span class="section-number">01</span> Aggiungi edificio</summary>
+        <summary><span class="section-number">01</span> <span data-i18n="sec.add">Aggiungi edificio</span></summary>
         <div class="section-body">
           <form id="building-form">
-            <div class="field"><label for="address">Indirizzo</label><input id="address" name="address" type="text" required maxlength="300" placeholder="Es. Via Roma 10, Torino" autocomplete="street-address"></div>
-            <fieldset><legend>Categoria</legend><div class="categories">
-              <label class="category"><input type="radio" name="category" value="worked" checked><span><i class="dot" aria-hidden="true"></i>Già lavorato</span></label>
-              <label class="category orange"><input type="radio" name="category" value="similar"><span><i class="dot orange" aria-hidden="true"></i>Supposto simile</span></label>
-              <label class="category green"><input type="radio" name="category" value="known"><span><i class="dot green" aria-hidden="true"></i>Di cui siamo a conoscenza</span></label>
+            <div class="field"><label for="address" data-i18n="form.address">Indirizzo</label><input id="address" name="address" type="text" required maxlength="300" placeholder="Es. Via Roma 10, Torino" data-i18n-attr="placeholder:form.address.ph" autocomplete="street-address"></div>
+            <fieldset><legend data-i18n="form.category">Categoria</legend><div class="categories">
+              <label class="category"><input type="radio" name="category" value="worked" checked><span><i class="dot" aria-hidden="true"></i><span data-i18n="cat.worked">Già lavorato</span></span></label>
+              <label class="category orange"><input type="radio" name="category" value="similar"><span><i class="dot orange" aria-hidden="true"></i><span data-i18n="cat.similar">Supposto simile</span></span></label>
+              <label class="category green"><input type="radio" name="category" value="known"><span><i class="dot green" aria-hidden="true"></i><span data-i18n="cat.known">Di cui siamo a conoscenza</span></span></label>
             </div></fieldset>
             <div class="field">
               <button type="button" class="btn subtle full" id="pick-location" aria-pressed="false">⌖ &nbsp; Scegli il punto sulla mappa</button>
-              <div class="coords"><div><label for="latitude">Latitudine <span class="optional">(opz.)</span></label><input id="latitude" type="text" inputmode="decimal" placeholder="45.07030" aria-describedby="coord-hint"></div><div><label for="longitude">Longitudine <span class="optional">(opz.)</span></label><input id="longitude" type="text" inputmode="decimal" placeholder="7.68690" aria-describedby="coord-hint"></div></div>
-              <p class="hint" id="coord-hint">Le coordinate hanno precedenza sull’indirizzo. Senza coordinate, cerca l’indirizzo e scegli un risultato.</p>
+              <div class="coords"><div><label for="latitude" data-i18n-html="form.lat">Latitudine <span class="optional">(opz.)</span></label><input id="latitude" type="text" inputmode="decimal" placeholder="45.07030" aria-describedby="coord-hint"></div><div><label for="longitude" data-i18n-html="form.lng">Longitudine <span class="optional">(opz.)</span></label><input id="longitude" type="text" inputmode="decimal" placeholder="7.68690" aria-describedby="coord-hint"></div></div>
+              <p class="hint" id="coord-hint" data-i18n="form.coordHint">Le coordinate hanno precedenza sull’indirizzo. Senza coordinate, cerca l’indirizzo e scegli un risultato.</p>
             </div>
-            <div class="field"><label for="notes">Note <span class="optional">(opzionali)</span></label><textarea id="notes" maxlength="5000" placeholder="Tipologia, interventi, osservazioni…" rows="2"></textarea></div>
+            <div class="field"><label for="notes" data-i18n-html="form.notes">Note <span class="optional">(opzionali)</span></label><textarea id="notes" maxlength="5000" placeholder="Tipologia, interventi, osservazioni…" data-i18n-attr="placeholder:form.notes.ph" rows="2"></textarea></div>
             <button type="submit" class="btn primary full" id="add-building">+ &nbsp; Aggiungi edificio</button>
             <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
-            <ul class="search-results" id="search-results" aria-label="Indirizzi trovati"></ul>
-            <p class="hint">La ricerca invia solo l’indirizzo a <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / komoot</a> (dati OpenStreetMap). Nessun invio se scegli il punto o inserisci le coordinate.</p>
+            <ul class="search-results" id="search-results" aria-label="Indirizzi trovati" data-i18n-attr="aria-label:aria.results"></ul>
+            <p class="hint" data-i18n-html="form.photonHint">La ricerca invia solo l’indirizzo e il centro della mappa a <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / komoot</a> (dati OpenStreetMap). Nessun invio se scegli il punto o inserisci le coordinate.</p>
           </form>
         </div>
       </details>
       <details class="section" id="roads-section" open>
-        <summary><span class="section-number">02</span> Strade percorse</summary>
+        <summary><span class="section-number">02</span> <span data-i18n="sec.roads">Strade percorse</span></summary>
         <div class="section-body">
           <div class="road-info"><span id="road-status">Nessun tracciamento attivo</span><strong id="road-distance">0 m</strong></div>
-          <button class="btn full" id="start-road">↗ &nbsp; Inizia tracciamento</button>
-          <button class="btn primary full" id="finish-road" hidden>✓ &nbsp; Fine tracciamento</button>
-          <div class="btn-row" id="draft-actions" hidden><button class="btn" id="undo-point">Togli punto</button><button class="btn danger" id="cancel-road">Annulla</button></div>
-          <div class="road-inventory" id="road-inventory" hidden><span class="field-label">Strade salvate</span><ul class="building-list road-list" id="road-list"></ul></div>
-          <p class="hint">Clicca lungo la strada per aggiungere i punti. Ogni tracciamento crea un segmento separato. Clicca una strada nell’elenco o sulla mappa per evidenziarla in viola, poi eliminala con il cestino.</p>
+          <button class="btn full" id="start-road" data-i18n="road.start">↗ &nbsp; Inizia tracciamento</button>
+          <button class="btn primary full" id="finish-road" data-i18n="road.finish" hidden>✓ &nbsp; Fine tracciamento</button>
+          <div class="btn-row" id="draft-actions" hidden><button class="btn" id="undo-point" data-i18n="road.undo">Togli punto</button><button class="btn danger" id="cancel-road" data-i18n="common.cancel">Annulla</button></div>
+          <div class="road-inventory" id="road-inventory" hidden><span class="field-label" data-i18n="road.saved">Strade salvate</span><ul class="building-list road-list" id="road-list"></ul></div>
+          <p class="hint" data-i18n="road.hint">Clicca lungo la strada per aggiungere i punti. Ogni tracciamento crea un segmento separato. Clicca una strada nell’elenco o sulla mappa per evidenziarla in viola, poi eliminala con il cestino.</p>
         </div>
       </details>
       <details class="section" id="export-section" open>
-        <summary><span class="section-number">03</span> Esportazione</summary>
+        <summary><span class="section-number">03</span> <span data-i18n="sec.export">Esportazione</span></summary>
         <div class="section-body">
-          <div class="export-stack"><button class="btn primary full" id="export-all">↓ &nbsp; Esporta tutto (PNG)</button><button class="btn full" id="export-buildings">↓ &nbsp; Esporta solo edifici (PNG)</button></div>
-          <p class="hint">Esporta l’area visibile con la legenda. Usa «Inquadra tutto» per includere tutti i rilievi.</p>
-          <div class="backup"><span class="field-label">Backup e scambio dati</span><div class="btn-row"><button class="btn" id="geojson-all">GeoJSON · tutto</button><button class="btn" id="geojson-buildings">Solo edifici</button></div><button class="text-btn" id="import-data" style="margin-top:9px">Importa backup GeoJSON</button><input type="file" id="import-file" accept=".geojson,.json,application/geo+json,application/json" hidden><p class="hint">Il GeoJSON conserva coordinate, categorie, note e strade. È disponibile anche se il PNG non riesce.</p></div>
+          <div class="export-stack"><button class="btn primary full" id="export-all" data-i18n="export.all">↓ &nbsp; Esporta tutto (PNG)</button><button class="btn full" id="export-buildings" data-i18n="export.buildings">↓ &nbsp; Esporta solo edifici (PNG)</button></div>
+          <p class="hint" data-i18n="export.hint">Esporta l’area visibile con la legenda. Usa «Inquadra tutto» per includere tutti i rilievi.</p>
+          <div class="backup"><span class="field-label" data-i18n="backup.title">Backup e scambio dati</span><div class="btn-row"><button class="btn" id="geojson-all" data-i18n="backup.all">GeoJSON · tutto</button><button class="btn" id="geojson-buildings" data-i18n="backup.buildings">Solo edifici</button></div><button class="text-btn" id="import-data" style="margin-top:9px" data-i18n="backup.import">Importa backup GeoJSON</button><input type="file" id="import-file" accept=".geojson,.json,application/geo+json,application/json" hidden><p class="hint" data-i18n="backup.hint">Il GeoJSON conserva coordinate, categorie, note e strade. È disponibile anche se il PNG non riesce.</p></div>
         </div>
       </details>
       <details class="section" id="settings-section">
-        <summary><span class="section-number">04</span> Impostazioni mappa</summary>
+        <summary><span class="section-number">04</span> <span data-i18n="sec.settings">Impostazioni mappa</span></summary>
         <div class="section-body">
           <form id="settings-form">
-            <p class="hint">Scegli il centro da usare all’apertura e con «Torna al centro». Il valore predefinito è il Quadrilatero Romano, con i quartieri vicini visibili.</p>
-            <div class="coords field"><div><label for="home-latitude">Latitudine del centro</label><input id="home-latitude" type="text" inputmode="decimal" required placeholder="45.07538"></div><div><label for="home-longitude">Longitudine del centro</label><input id="home-longitude" type="text" inputmode="decimal" required placeholder="7.67970"></div></div>
-            <div class="field"><label for="home-zoom">Zoom iniziale <span class="optional">(da 2 a 19)</span></label><input id="home-zoom" type="number" min="2" max="19" step="1" required value="14" aria-describedby="zoom-hint"><p class="hint" id="zoom-hint">Un valore più basso mostra più territorio. 14 offre una vista ampia del centro e dei dintorni.</p></div>
-            <button type="submit" class="btn primary full">Applica e centra la mappa</button>
-            <button type="button" class="text-btn" id="reset-center" style="margin-top:10px">Ripristina Quadrilatero e zoom ampio</button>
+            <p class="hint" data-i18n="settings.hint">Scegli il centro da usare all’apertura e con «Torna al centro». Il valore predefinito è il Quadrilatero Romano, con i quartieri vicini visibili. Per lavorare in un’altra città, inserisci qui le sue coordinate.</p>
+            <div class="coords field"><div><label for="home-latitude" data-i18n="settings.lat">Latitudine del centro</label><input id="home-latitude" type="text" inputmode="decimal" required placeholder="45.07538"></div><div><label for="home-longitude" data-i18n="settings.lng">Longitudine del centro</label><input id="home-longitude" type="text" inputmode="decimal" required placeholder="7.67970"></div></div>
+            <div class="field"><label for="home-zoom" data-i18n-html="settings.zoom">Zoom iniziale <span class="optional">(da 2 a 19)</span></label><input id="home-zoom" type="number" min="2" max="19" step="1" required value="14" aria-describedby="zoom-hint"><p class="hint" id="zoom-hint" data-i18n="settings.zoomHint">Un valore più basso mostra più territorio. 14 offre una vista ampia del centro e dei dintorni.</p></div>
+            <button type="submit" class="btn primary full" data-i18n="settings.apply">Applica e centra la mappa</button>
+            <button type="button" class="text-btn" id="reset-center" style="margin-top:10px" data-i18n="settings.reset">Ripristina Quadrilatero e zoom ampio</button>
             <div id="settings-message" class="form-message" role="status" aria-live="polite"></div>
           </form>
         </div>
       </details>
-      <section class="inventory" aria-label="Elenco edifici"><div class="inventory-title"><h2>Edifici in archivio</h2><span class="count-badge" id="building-count">0 edifici</span></div><div class="empty" id="empty-state"><strong>Il prossimo rilievo parte da qui</strong><p>Aggiungi un indirizzo oppure scegli<br>un punto sulla mappa.</p></div><ul class="building-list" id="building-list"></ul></section>
+      <section class="inventory" aria-label="Elenco edifici" data-i18n-attr="aria-label:aria.inventory"><div class="inventory-title"><h2 data-i18n="inv.title">Edifici in archivio</h2><span class="count-badge" id="building-count">0 edifici</span></div><div class="empty" id="empty-state"><strong data-i18n="inv.empty.title">Il prossimo rilievo parte da qui</strong><p data-i18n-html="inv.empty.text">Aggiungi un indirizzo oppure scegli<br>un punto sulla mappa.</p></div><ul class="building-list" id="building-list"></ul></section>
+      <details class="section" id="about-section">
+        <summary><span class="section-number">05</span> <span data-i18n="sec.about">Informazioni</span></summary>
+        <div class="section-body about">
+          <p data-i18n="about.p1">City Tracker è uno strumento gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi, in qualsiasi città. Funziona nel browser, senza account e senza installazione.</p>
+          <p data-i18n="about.p2">I tuoi dati (indirizzi, note, strade) restano nel tuo browser e non vengono mai inviati a noi. Esporta un GeoJSON per farne un backup o per spostarli su un altro computer.</p>
+          <p data-i18n-html="about.p3">Sviluppato da Paolo Malugani · <a href="https://github.com/Paolo410/city-tracker" target="_blank" rel="noopener">Codice sorgente</a> · <a href="https://github.com/Paolo410/city-tracker/blob/main/LICENSE" target="_blank" rel="noopener">Licenza MIT</a> · Cartografia © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.</p>
+        </div>
+      </details>
     </div>
     <footer class="save-footer" id="save-footer"><span id="save-status" role="status">Salvataggio automatico in questo browser</span></footer>
   </aside>
-  <main class="map-area" aria-label="Mappa dei rilievi">
+  <main class="map-area" aria-label="Mappa dei rilievi" data-i18n-attr="aria-label:aria.mainmap">
     <div id="map" aria-label="Mappa interattiva: Quadrilatero Romano e dintorni"></div>
-    <div class="map-top"><button type="button" class="location-chip" id="open-settings" aria-label="Apri impostazioni mappa" title="Modifica il centro e lo zoom iniziale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span><strong id="location-title">Quadrilatero Romano</strong><small id="location-subtitle">Torino · Impostazioni mappa ⚙</small></span></button><div class="map-actions"><button class="btn" id="fit-all" title="Inquadra tutti gli edifici e tutte le strade">⌗ &nbsp; Inquadra tutto</button><button class="btn" id="go-home">Torna al centro ↗</button></div></div>
-    <div class="mode-banner" id="mode-banner" hidden><span id="mode-text"></span><button id="exit-mode">Annulla</button></div>
-    <div class="map-notice" id="map-notice" role="alert" hidden><span id="map-notice-text"></span><button class="text-btn" id="retry-map">Riprova</button></div>
+    <div class="map-top"><button type="button" class="location-chip" id="open-settings" aria-label="Apri impostazioni mappa" title="Modifica il centro e lo zoom iniziale" data-i18n-attr="aria-label:chip.aria;title:chip.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span><strong id="location-title">Quadrilatero Romano</strong><small id="location-subtitle">Torino · Impostazioni mappa ⚙</small></span></button><div class="map-actions"><button class="btn" id="fit-all" title="Inquadra tutti gli edifici e tutte le strade" data-i18n-attr="title:map.fit.title" data-i18n="map.fit">⌗ &nbsp; Inquadra tutto</button><button class="btn" id="go-home" data-i18n="map.home">Torna al centro ↗</button></div></div>
+    <div class="mode-banner" id="mode-banner" hidden><span id="mode-text"></span><button id="exit-mode" data-i18n="common.cancel">Annulla</button></div>
+    <div class="map-notice" id="map-notice" role="alert" hidden><span id="map-notice-text"></span><button class="text-btn" id="retry-map" data-i18n="map.retry">Riprova</button></div>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </main>
 </div>
-<div class="busy-overlay" id="busy-overlay" role="status" hidden><div>Preparazione dell’immagine…</div></div>
-<noscript>Per usare City Tracker, abilita JavaScript nel browser.</noscript>
+<div class="busy-overlay" id="busy-overlay" role="status" hidden><div data-i18n="busy">Preparazione dell’immagine…</div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
 <script>
@@ -252,8 +332,8 @@
   const DEFAULT_CENTER = [45.07538, 7.67970];
   const defaultSettings = () => ({ center:[...DEFAULT_CENTER], zoom:14 });
   const COLORS = { worked: '#2476cf', similar: '#d87916', known: '#1f9d62', road: '#d43d3d', roadSelected: '#7a2bb8' };
-  const LABELS = { worked: 'Già lavorato', similar: 'Supposto simile', known: 'Di cui siamo a conoscenza' };
-  // Classe CSS di colore per categoria (il blu è il colore base e non ha classe). Usata da lista, popup e legenda.
+  // Categorie valide (sorgente unica delle chiavi) e relativa classe CSS di colore (il blu è il colore base e non ha classe).
+  // Le etichette tradotte stanno nel dizionario: chiavi «cat.<categoria>».
   const CATEGORY_CLASS = { worked: '', similar: 'orange', known: 'green' };
   const categoryClass = category => CATEGORY_CLASS[category] ? ' ' + CATEGORY_CLASS[category] : '';
   // I server volontari di OpenStreetMap vietano l’uso da parte di app distribuite e rispondono 403
@@ -266,15 +346,347 @@
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &middot; tile OSM France',
       credit:'© OpenStreetMap contributors · tile OSM France' },
     { id:'esri', url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', maxZoom:19,
-      attribution:'Cartografia <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; OpenStreetMap contributors',
-      credit:'Cartografia Esri · © OpenStreetMap contributors' }
+      attribution:'<a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &copy; OpenStreetMap contributors',
+      credit:'Esri · © OpenStreetMap contributors' }
   ];
   let providerIndex = 0, providerErrors = 0;
   const provider = () => TILE_PROVIDERS[providerIndex];
   const $ = id => document.getElementById(id);
+  // Lingue. Il dizionario è la sorgente di tutti i testi visibili: it è la lingua predefinita e coincide col markup statico
+  // (visibile ai motori di ricerca e senza JavaScript). Le chiavi di it ed en devono essere identiche.
+  // I valori «html» sono scritti dagli sviluppatori: il testo dell’utente non passa mai da qui.
+  const LANGS = ['it', 'en'], LANG_KEY = 'city_tracker_lang';
+  const I18N = {
+    it: {
+      'meta.title': 'City Tracker · Censisci edifici e percorsi su mappa',
+      'meta.desc': 'Strumento web gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi in qualsiasi città. Nessun account: i dati restano nel tuo browser.',
+      'meta.ogAlt': 'City Tracker: mappa con edifici numerati e percorsi tracciati',
+      'brand.eyebrow': 'Rilievi sul territorio',
+      'brand.tagline': 'Edifici, sopralluoghi e strade percorse.<br>Il tuo archivio di lavoro, sulla mappa.',
+      'aria.sidebar': 'Controlli e archivio edifici',
+      'aria.stats': 'Riepilogo',
+      'aria.results': 'Indirizzi trovati',
+      'aria.inventory': 'Elenco edifici',
+      'aria.mainmap': 'Mappa dei rilievi',
+      'stat.worked': 'Già lavorati',
+      'stat.similar': 'Supposti simili',
+      'stat.known': 'A conoscenza',
+      'stat.roads': 'Strade percorse',
+      'cat.worked': 'Già lavorato',
+      'cat.similar': 'Supposto simile',
+      'cat.known': 'Di cui siamo a conoscenza',
+      'sec.add': 'Aggiungi edificio',
+      'sec.roads': 'Strade percorse',
+      'sec.export': 'Esportazione',
+      'sec.settings': 'Impostazioni mappa',
+      'sec.about': 'Informazioni',
+      'common.cancel': 'Annulla',
+      'form.address': 'Indirizzo',
+      'form.address.ph': 'Es. Via Roma 10, Torino',
+      'form.category': 'Categoria',
+      'form.pick': '⌖   Scegli il punto sulla mappa',
+      'form.pick.cancel': 'Annulla scelta del punto',
+      'form.lat': 'Latitudine <span class="optional">(opz.)</span>',
+      'form.lng': 'Longitudine <span class="optional">(opz.)</span>',
+      'form.coordHint': 'Le coordinate hanno precedenza sull’indirizzo. Senza coordinate, cerca l’indirizzo e scegli un risultato.',
+      'form.notes': 'Note <span class="optional">(opzionali)</span>',
+      'form.notes.ph': 'Tipologia, interventi, osservazioni…',
+      'form.add': '+   Aggiungi edificio',
+      'form.searching': 'Ricerca indirizzo…',
+      'form.photonHint': 'La ricerca invia solo l’indirizzo e il centro della mappa a <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / komoot</a> (dati OpenStreetMap). Nessun invio se scegli il punto o inserisci le coordinate.',
+      'road.status.none': 'Nessun tracciamento attivo',
+      'road.start': '↗   Inizia tracciamento',
+      'road.finish': '✓   Fine tracciamento',
+      'road.undo': 'Togli punto',
+      'road.saved': 'Strade salvate',
+      'road.hint': 'Clicca lungo la strada per aggiungere i punti. Ogni tracciamento crea un segmento separato. Clicca una strada nell’elenco o sulla mappa per evidenziarla in viola, poi eliminala con il cestino.',
+      'road.name': 'Strada {n}',
+      'road.points.one': '{n} punto inserito',
+      'road.points.other': '{n} punti inseriti',
+      'road.pt.one': '{n} punto',
+      'road.pt.other': '{n} punti',
+      'road.selected': 'selezionata',
+      'road.delete': 'Elimina strada {n}',
+      'road.deleted': 'Strada eliminata.',
+      'road.savedToast': 'Strada salvata. Puoi iniziare un nuovo segmento.',
+      'road.cancelled': 'Tracciamento annullato.',
+      'road.recovered': 'Tracciamento recuperato. Puoi aggiungere punti o terminarlo.',
+      'mode.draw': 'Tracciamento attivo · Clicca sulla mappa. Servono almeno 2 punti. Termina con «Fine tracciamento».',
+      'mode.pick': 'Clicca sulla mappa per selezionare la posizione dell’edificio.',
+      'export.all': '↓   Esporta tutto (PNG)',
+      'export.buildings': '↓   Esporta solo edifici (PNG)',
+      'export.hint': 'Esporta l’area visibile con la legenda. Usa «Inquadra tutto» per includere tutti i rilievi.',
+      'backup.title': 'Backup e scambio dati',
+      'backup.all': 'GeoJSON · tutto',
+      'backup.buildings': 'Solo edifici',
+      'backup.import': 'Importa backup GeoJSON',
+      'backup.hint': 'Il GeoJSON conserva coordinate, categorie, note e strade. È disponibile anche se il PNG non riesce.',
+      'settings.hint': 'Scegli il centro da usare all’apertura e con «Torna al centro». Il valore predefinito è il Quadrilatero Romano, con i quartieri vicini visibili. Per lavorare in un’altra città, inserisci qui le sue coordinate.',
+      'settings.lat': 'Latitudine del centro',
+      'settings.lng': 'Longitudine del centro',
+      'settings.zoom': 'Zoom iniziale <span class="optional">(da 2 a 19)</span>',
+      'settings.zoomHint': 'Un valore più basso mostra più territorio. 14 offre una vista ampia del centro e dei dintorni.',
+      'settings.apply': 'Applica e centra la mappa',
+      'settings.reset': 'Ripristina Quadrilatero e zoom ampio',
+      'settings.applied': 'Centro e zoom salvati: verranno usati anche alla riapertura.',
+      'settings.appliedWarn': 'Centro applicato. {msg}',
+      'inv.title': 'Edifici in archivio',
+      'inv.count.one': '{n} edificio',
+      'inv.count.other': '{n} edifici',
+      'inv.empty.title': 'Il prossimo rilievo parte da qui',
+      'inv.empty.text': 'Aggiungi un indirizzo oppure scegli<br>un punto sulla mappa.',
+      'status.auto': 'Salvataggio automatico in questo browser',
+      'status.saved': 'Salvato in questo browser · {time}',
+      'loc.default.title': 'Quadrilatero Romano',
+      'loc.default.sub': 'Torino · Impostazioni mappa ⚙',
+      'loc.custom.title': 'Centro personalizzato',
+      'loc.custom.sub': 'Modifica coordinate e zoom ⚙',
+      'chip.aria': 'Apri impostazioni mappa',
+      'chip.title': 'Modifica il centro e lo zoom iniziale',
+      'map.aria': 'Mappa interattiva · Centro: {c}',
+      'map.fit': '⌗   Inquadra tutto',
+      'map.fit.title': 'Inquadra tutti gli edifici e tutte le strade',
+      'map.home': 'Torna al centro ↗',
+      'map.retry': 'Riprova',
+      'map.fitEmpty': 'Aggiungi un edificio o una strada per inquadrare i rilievi.',
+      'map.altTiles': 'La cartografia precedente non era disponibile: è stata caricata una mappa alternativa. I tuoi dati non sono stati toccati.',
+      'map.tilesPartial': 'Alcune parti della cartografia non sono disponibili. Controlla Internet e premi «Riprova».',
+      'map.notLoaded': 'Mappa non caricata. Connettiti a Internet e premi «Riprova». I dati locali e i backup restano accessibili.',
+      'busy': 'Preparazione dell’immagine…',
+      'err.center': 'Inserisci un centro valido: latitudine tra −85.05112878 e 85.05112878, longitudine tra −180 e 180.',
+      'err.zoom': 'Lo zoom deve essere un numero intero tra 2 e 19.',
+      'err.format': 'Formato del backup non riconosciuto.',
+      'err.building': 'Il backup contiene un edificio non valido.',
+      'err.road': 'Il backup contiene una strada non valida.',
+      'store.unreadable': 'Archivio non leggibile: conservato senza sovrascriverlo. Esporta i nuovi dati in GeoJSON.',
+      'store.unavailable': 'Salvataggio locale non disponibile. Conserva un backup GeoJSON.',
+      'store.failed': 'Salvataggio non riuscito. Esporta un backup GeoJSON prima di chiudere.',
+      'bld.deleted': 'Edificio eliminato.',
+      'bld.added': 'Edificio aggiunto all’archivio.',
+      'bld.delete': 'Elimina {name}',
+      'search.wait': 'Attendi un istante prima di ripetere la ricerca.',
+      'search.running': 'Ricerca in corso. Le coordinate non vengono mai scelte automaticamente.',
+      'search.unavailable': 'Il servizio indirizzi non è disponibile al momento.',
+      'search.choose': 'Scegli l’indirizzo corretto per aggiungere l’edificio:',
+      'search.none': 'Nessun risultato. Specifica anche la città oppure scegli un punto sulla mappa.',
+      'search.failed': 'Ricerca non riuscita. Controlla la connessione, inserisci le coordinate oppure scegli il punto sulla mappa.',
+      'pick.endDraw': 'Termina o annulla prima il tracciamento della strada.',
+      'pick.chosen': 'Punto selezionato. Completa il modulo e aggiungi l’edificio.',
+      'coord.both': 'Inserisci sia la latitudine sia la longitudine del centro.',
+      'coord.pair': 'Inserisci entrambe le coordinate, oppure lascia vuoti tutti e due i campi.',
+      'coord.format': 'Usa coordinate decimali, ad esempio 45.07030 e 7.68690.',
+      'coord.range': 'Latitudine da −90 a 90; longitudine da −180 a 180.',
+      'addr.need1': 'Inserisci un indirizzo per riconoscere l’edificio.',
+      'addr.need2': 'Inserisci un indirizzo.',
+      'draw.beforeAdd': 'Termina o annulla il tracciamento prima di aggiungere un edificio.',
+      'draw.beforeExport': 'Termina o annulla il tracciamento prima di esportare il PNG.',
+      'geo.exported': 'Backup GeoJSON esportato.',
+      'geo.draftPoint': 'Il punto singolo della bozza non forma ancora una strada.',
+      'imp.notApp': 'Seleziona un backup GeoJSON esportato da questa app.',
+      'imp.badElement': 'Il file contiene un elemento non valido.',
+      'imp.multiDraft': 'Il backup contiene più bozze di strada.',
+      'imp.unknown': 'Il GeoJSON contiene elementi non riconosciuti. Usa un backup di questa app.',
+      'imp.tooBig': 'Il file supera il limite di 20 MB.',
+      'imp.badJson': 'Il file non contiene JSON valido. Nessun dato modificato.',
+      'imp.b.one': '{n} edificio',
+      'imp.b.other': '{n} edifici',
+      'imp.r.one': '{n} strada',
+      'imp.r.other': '{n} strade',
+      'imp.sum': '{b} e {r}',
+      'imp.draft': ', più una bozza',
+      'imp.confirm': 'Importare {sum}?\nIl backup sostituirà l’archivio attuale. Puoi esportarlo in GeoJSON prima di procedere.',
+      'imp.done': 'Backup importato: {sum}.',
+      'png.heading': 'LEGENDA DEI RILIEVI',
+      'legend.road': 'Strada percorsa',
+      'png.titleAll': 'Edifici e strade percorse',
+      'png.titleBuildings': 'Solo edifici',
+      'png.unavailable': 'Libreria PNG non disponibile. Verifica Internet oppure usa i pulsanti GeoJSON.',
+      'png.tilesLoad': 'La cartografia non ha terminato il caricamento. Riprova o usa GeoJSON.',
+      'png.partial': 'Alcune parti della mappa non sono caricate. Attendi, usa «Riprova» oppure esporta GeoJSON.',
+      'png.cors': 'Il browser non consente di esportare la cartografia. Usa il backup GeoJSON.',
+      'png.timeout': 'Caricamento immagini scaduto. Riprova oppure esporta GeoJSON.',
+      'png.fail': 'Impossibile creare il PNG. Usa il backup GeoJSON.',
+      'png.done': 'PNG esportato con legenda e attribuzione cartografica.',
+      'png.failGeneric': 'Esportazione PNG non riuscita. Usa i pulsanti GeoJSON.',
+      'file.all': 'completo',
+      'file.buildings': 'edifici',
+      'about.p1': 'City Tracker è uno strumento gratuito per censire edifici su mappa e tracciare i percorsi dei sopralluoghi, in qualsiasi città. Funziona nel browser, senza account e senza installazione.',
+      'about.p2': 'I tuoi dati (indirizzi, note, strade) restano nel tuo browser e non vengono mai inviati a noi. Esporta un GeoJSON per farne un backup o per spostarli su un altro computer.',
+      'about.p3': 'Sviluppato da Paolo Malugani · <a href="https://github.com/Paolo410/city-tracker" target="_blank" rel="noopener">Codice sorgente</a> · <a href="https://github.com/Paolo410/city-tracker/blob/main/LICENSE" target="_blank" rel="noopener">Licenza MIT</a> · Cartografia © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.'
+    },
+    en: {
+      'meta.title': 'City Tracker · Map buildings and walked routes online',
+      'meta.desc': 'Free web tool to map buildings and track the routes you walk on site visits, in any city. No account needed: your data stays in your browser.',
+      'meta.ogAlt': 'City Tracker: a map with numbered buildings and traced routes',
+      'brand.eyebrow': 'Field surveys',
+      'brand.tagline': 'Buildings, site visits and roads covered.<br>Your working archive, on the map.',
+      'aria.sidebar': 'Controls and building archive',
+      'aria.stats': 'Summary',
+      'aria.results': 'Addresses found',
+      'aria.inventory': 'Building list',
+      'aria.mainmap': 'Survey map',
+      'stat.worked': 'Worked',
+      'stat.similar': 'Presumed similar',
+      'stat.known': 'Known',
+      'stat.roads': 'Roads covered',
+      'cat.worked': 'Already worked',
+      'cat.similar': 'Presumed similar',
+      'cat.known': 'Known to us',
+      'sec.add': 'Add building',
+      'sec.roads': 'Roads covered',
+      'sec.export': 'Export',
+      'sec.settings': 'Map settings',
+      'sec.about': 'About',
+      'common.cancel': 'Cancel',
+      'form.address': 'Address',
+      'form.address.ph': 'E.g. 10 Downing Street, London',
+      'form.category': 'Category',
+      'form.pick': '⌖   Pick the point on the map',
+      'form.pick.cancel': 'Cancel point selection',
+      'form.lat': 'Latitude <span class="optional">(optional)</span>',
+      'form.lng': 'Longitude <span class="optional">(optional)</span>',
+      'form.coordHint': 'Coordinates take precedence over the address. Without coordinates, the address is searched and you pick a result.',
+      'form.notes': 'Notes <span class="optional">(optional)</span>',
+      'form.notes.ph': 'Type, work done, remarks…',
+      'form.add': '+   Add building',
+      'form.searching': 'Searching address…',
+      'form.photonHint': 'The search sends only the address and the map centre to <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / komoot</a> (OpenStreetMap data). Nothing is sent if you pick the point or enter coordinates.',
+      'road.status.none': 'No tracing in progress',
+      'road.start': '↗   Start tracing',
+      'road.finish': '✓   Finish tracing',
+      'road.undo': 'Remove point',
+      'road.saved': 'Saved roads',
+      'road.hint': 'Click along the road to add points. Each tracing creates a separate segment. Click a road in the list or on the map to highlight it in purple, then delete it with the bin.',
+      'road.name': 'Road {n}',
+      'road.points.one': '{n} point added',
+      'road.points.other': '{n} points added',
+      'road.pt.one': '{n} point',
+      'road.pt.other': '{n} points',
+      'road.selected': 'selected',
+      'road.delete': 'Delete road {n}',
+      'road.deleted': 'Road deleted.',
+      'road.savedToast': 'Road saved. You can start a new segment.',
+      'road.cancelled': 'Tracing cancelled.',
+      'road.recovered': 'Tracing recovered. You can add points or finish it.',
+      'mode.draw': 'Tracing active · Click on the map. At least 2 points are needed. Finish with “Finish tracing”.',
+      'mode.pick': 'Click on the map to select the building’s position.',
+      'export.all': '↓   Export everything (PNG)',
+      'export.buildings': '↓   Export buildings only (PNG)',
+      'export.hint': 'Exports the visible area with the legend. Use “Fit all” to include every survey item.',
+      'backup.title': 'Backup and data exchange',
+      'backup.all': 'GeoJSON · everything',
+      'backup.buildings': 'Buildings only',
+      'backup.import': 'Import GeoJSON backup',
+      'backup.hint': 'GeoJSON keeps coordinates, categories, notes and roads. It is available even if the PNG fails.',
+      'settings.hint': 'Choose the centre used when the map opens and with “Back to centre”. The default is the Quadrilatero Romano in Turin, with the surrounding districts visible. To work in another city, enter its coordinates here.',
+      'settings.lat': 'Centre latitude',
+      'settings.lng': 'Centre longitude',
+      'settings.zoom': 'Initial zoom <span class="optional">(2 to 19)</span>',
+      'settings.zoomHint': 'A lower value shows more territory. 14 gives a wide view of the centre and its surroundings.',
+      'settings.apply': 'Apply and centre the map',
+      'settings.reset': 'Restore Quadrilatero and wide zoom',
+      'settings.applied': 'Centre and zoom saved: they will also be used when you reopen.',
+      'settings.appliedWarn': 'Centre applied. {msg}',
+      'inv.title': 'Buildings in the archive',
+      'inv.count.one': '{n} building',
+      'inv.count.other': '{n} buildings',
+      'inv.empty.title': 'Your next survey starts here',
+      'inv.empty.text': 'Add an address or pick<br>a point on the map.',
+      'status.auto': 'Automatic saving in this browser',
+      'status.saved': 'Saved in this browser · {time}',
+      'loc.default.title': 'Quadrilatero Romano',
+      'loc.default.sub': 'Turin · Map settings ⚙',
+      'loc.custom.title': 'Custom centre',
+      'loc.custom.sub': 'Edit coordinates and zoom ⚙',
+      'chip.aria': 'Open map settings',
+      'chip.title': 'Change the centre and the initial zoom',
+      'map.aria': 'Interactive map · Centre: {c}',
+      'map.fit': '⌗   Fit all',
+      'map.fit.title': 'Fit all buildings and roads in view',
+      'map.home': 'Back to centre ↗',
+      'map.retry': 'Retry',
+      'map.fitEmpty': 'Add a building or a road to fit them in view.',
+      'map.altTiles': 'The previous map source was unavailable: an alternative map has been loaded. Your data has not been touched.',
+      'map.tilesPartial': 'Some parts of the map are unavailable. Check your internet connection and press “Retry”.',
+      'map.notLoaded': 'Map not loaded. Connect to the internet and press “Retry”. Your local data and backups remain accessible.',
+      'busy': 'Preparing the image…',
+      'err.center': 'Enter a valid centre: latitude between −85.05112878 and 85.05112878, longitude between −180 and 180.',
+      'err.zoom': 'Zoom must be a whole number between 2 and 19.',
+      'err.format': 'Backup format not recognised.',
+      'err.building': 'The backup contains an invalid building.',
+      'err.road': 'The backup contains an invalid road.',
+      'store.unreadable': 'Archive unreadable: kept without overwriting it. Export new data to GeoJSON.',
+      'store.unavailable': 'Local saving unavailable. Keep a GeoJSON backup.',
+      'store.failed': 'Saving failed. Export a GeoJSON backup before closing.',
+      'bld.deleted': 'Building deleted.',
+      'bld.added': 'Building added to the archive.',
+      'bld.delete': 'Delete {name}',
+      'search.wait': 'Wait a moment before searching again.',
+      'search.running': 'Searching. Coordinates are never chosen automatically.',
+      'search.unavailable': 'The address service is currently unavailable.',
+      'search.choose': 'Choose the correct address to add the building:',
+      'search.none': 'No results. Add the city too, or pick a point on the map.',
+      'search.failed': 'Search failed. Check your connection, enter coordinates or pick the point on the map.',
+      'pick.endDraw': 'Finish or cancel the road tracing first.',
+      'pick.chosen': 'Point selected. Complete the form and add the building.',
+      'coord.both': 'Enter both the centre latitude and longitude.',
+      'coord.pair': 'Enter both coordinates, or leave both fields empty.',
+      'coord.format': 'Use decimal coordinates, for example 45.07030 and 7.68690.',
+      'coord.range': 'Latitude from −90 to 90; longitude from −180 to 180.',
+      'addr.need1': 'Enter an address to identify the building.',
+      'addr.need2': 'Enter an address.',
+      'draw.beforeAdd': 'Finish or cancel the tracing before adding a building.',
+      'draw.beforeExport': 'Finish or cancel the tracing before exporting the PNG.',
+      'geo.exported': 'GeoJSON backup exported.',
+      'geo.draftPoint': 'The single draft point does not form a road yet.',
+      'imp.notApp': 'Select a GeoJSON backup exported by this app.',
+      'imp.badElement': 'The file contains an invalid element.',
+      'imp.multiDraft': 'The backup contains more than one road draft.',
+      'imp.unknown': 'The GeoJSON contains unrecognised elements. Use a backup from this app.',
+      'imp.tooBig': 'The file exceeds the 20 MB limit.',
+      'imp.badJson': 'The file does not contain valid JSON. No data was changed.',
+      'imp.b.one': '{n} building',
+      'imp.b.other': '{n} buildings',
+      'imp.r.one': '{n} road',
+      'imp.r.other': '{n} roads',
+      'imp.sum': '{b} and {r}',
+      'imp.draft': ', plus a draft',
+      'imp.confirm': 'Import {sum}?\nThe backup will replace the current archive. You can export it to GeoJSON before proceeding.',
+      'imp.done': 'Backup imported: {sum}.',
+      'png.heading': 'SURVEY LEGEND',
+      'legend.road': 'Road covered',
+      'png.titleAll': 'Buildings and roads covered',
+      'png.titleBuildings': 'Buildings only',
+      'png.unavailable': 'PNG library unavailable. Check your internet connection or use the GeoJSON buttons.',
+      'png.tilesLoad': 'The map did not finish loading. Try again or use GeoJSON.',
+      'png.partial': 'Some parts of the map are not loaded. Wait, use “Retry”, or export GeoJSON.',
+      'png.cors': 'The browser does not allow exporting the map. Use the GeoJSON backup.',
+      'png.timeout': 'Image loading timed out. Try again or export GeoJSON.',
+      'png.fail': 'Could not create the PNG. Use the GeoJSON backup.',
+      'png.done': 'PNG exported with legend and map attribution.',
+      'png.failGeneric': 'PNG export failed. Use the GeoJSON buttons.',
+      'file.all': 'complete',
+      'file.buildings': 'buildings',
+      'about.p1': 'City Tracker is a free tool to map buildings and track the routes you walk on site visits, in any city. It runs in your browser, with no account and nothing to install.',
+      'about.p2': 'Your data (addresses, notes, roads) stays in your browser and is never sent to us. Export a GeoJSON to back it up or to move it to another computer.',
+      'about.p3': 'Developed by Paolo Malugani · <a href="https://github.com/Paolo410/city-tracker" target="_blank" rel="noopener">Source code</a> · <a href="https://github.com/Paolo410/city-tracker/blob/main/LICENSE" target="_blank" rel="noopener">MIT licence</a> · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.'
+    }
+  };
+  let lang = 'it';
+  // Interpolazione con funzione: un «$&» nel testo dell’utente non viene interpretato come pattern di sostituzione.
+  const t = (key, vars) => {
+    let text = I18N[lang][key] ?? I18N.it[key] ?? key;
+    if (vars) for (const [name, value] of Object.entries(vars)) text = text.replaceAll('{' + name + '}', () => String(value));
+    return text;
+  };
+  const tn = (base, n, vars) => t(base + (n === 1 ? '.one' : '.other'), { n, ...vars });
+  const label = category => t('cat.' + category);
+  const locale = () => lang === 'it' ? 'it-IT' : 'en-GB';
+  const formatDate = d => lang === 'it' ? d.toLocaleDateString('it-IT') : d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const formatTime = d => d.toLocaleTimeString(locale(), { hour:'2-digit', minute:'2-digit' });
   const uid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 11);
   const emptyState = () => ({ version: 1, buildings: [], roads: [], draft: null, settings:defaultSettings() });
-  let state = emptyState(), map, tiles, buildingsLayer, roadsLayer, draftLayer, previewMarker;
+  let state = emptyState(), map, tiles, buildingsLayer, roadsLayer, draftLayer, previewMarker, legendControl, lastSaved = null;
   let drawing = false, picking = false, exporting = false, searching = false;
   let selectedRoadId = null; // Selezione effimera: evidenzia la strada, non viene salvata.
   let storageReady = true, storageMessage = '', toastTimer, searchAbort, searchSequence = 0;
@@ -286,21 +698,21 @@
   const pointCopy = p => [p[0], p[1]];
 
   function validateSettings(value) {
-    if (!value || !validPoint(value.center) || Math.abs(value.center[0]) > 85.05112878) throw new Error('Inserisci un centro valido: latitudine tra −85.05112878 e 85.05112878, longitudine tra −180 e 180.');
-    if (!Number.isInteger(value.zoom) || value.zoom < 2 || value.zoom > 19) throw new Error('Lo zoom deve essere un numero intero tra 2 e 19.');
+    if (!value || !validPoint(value.center) || Math.abs(value.center[0]) > 85.05112878) throw new Error(t('err.center'));
+    if (!Number.isInteger(value.zoom) || value.zoom < 2 || value.zoom > 19) throw new Error(t('err.zoom'));
     return { center:pointCopy(value.center), zoom:value.zoom };
   }
 
   function validateState(value) {
-    if (!value || value.version !== 1 || !Array.isArray(value.buildings) || !Array.isArray(value.roads)) throw new Error('Formato del backup non riconosciuto.');
+    if (!value || value.version !== 1 || !Array.isArray(value.buildings) || !Array.isArray(value.roads)) throw new Error(t('err.format'));
     const result = emptyState(), ids = new Set();
     const uniqueId = id => { const next = typeof id === 'string' && id.length <= 100 && !ids.has(id) ? id : uid(); ids.add(next); return next; };
     result.buildings = value.buildings.map(b => {
-      if (!b || !validText(b.address, 300) || !b.address.trim() || !validText(b.notes ?? '', 5000) || !Object.hasOwn(LABELS, b.category) || !validPoint([b.lat, b.lng])) throw new Error('Il backup contiene un edificio non valido.');
+      if (!b || !validText(b.address, 300) || !b.address.trim() || !validText(b.notes ?? '', 5000) || !Object.hasOwn(CATEGORY_CLASS, b.category) || !validPoint([b.lat, b.lng])) throw new Error(t('err.building'));
       return { id: uniqueId(b.id), address: b.address, lat: b.lat, lng: b.lng, category: b.category, notes: b.notes || '' };
     });
     function validateRoad(r, min) {
-      if (!r || !Array.isArray(r.points) || r.points.length < min || !r.points.every(validPoint)) throw new Error('Il backup contiene una strada non valida.');
+      if (!r || !Array.isArray(r.points) || r.points.length < min || !r.points.every(validPoint)) throw new Error(t('err.road'));
       return { id: uniqueId(r.id), points: r.points.map(pointCopy) };
     }
     result.roads = value.roads.map(r => validateRoad(r, 2));
@@ -311,33 +723,36 @@
   }
 
   // localStorage può essere disabilitato dalle impostazioni aziendali o dal browser.
-  function storageWarning(message) {
-    storageMessage = message;
+  // storageMessage contiene una chiave del dizionario (non un testo), così segue il cambio di lingua.
+  function renderSaveStatus() {
+    $('save-status').textContent = storageMessage ? t(storageMessage) : lastSaved ? t('status.saved', { time:formatTime(lastSaved) }) : t('status.auto');
+  }
+  function storageWarning(key) {
+    storageMessage = key;
     $('save-footer').classList.add('warning');
-    $('save-status').textContent = message;
+    renderSaveStatus();
   }
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         try { state = validateState(JSON.parse(raw)); }
-        catch (error) { storageReady = false; storageWarning('Archivio non leggibile: conservato senza sovrascriverlo. Esporta i nuovi dati in GeoJSON.'); }
+        catch (error) { storageReady = false; storageWarning('store.unreadable'); }
       }
-    } catch (error) { storageWarning('Salvataggio locale non disponibile. Conserva un backup GeoJSON.'); }
+    } catch (error) { storageWarning('store.unavailable'); }
   }
   function saveState() {
     if (!storageReady) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       $('save-footer').classList.remove('warning');
-      $('save-status').textContent = 'Salvato in questo browser · ' + new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
-      storageMessage = '';
-    } catch (error) { storageWarning('Salvataggio non riuscito. Esporta un backup GeoJSON prima di chiudere.'); }
+      storageMessage = ''; lastSaved = new Date(); renderSaveStatus();
+    } catch (error) { storageWarning('store.failed'); }
   }
   function toast(message, error = false, action) {
     clearTimeout(toastTimer);
     const node = $('toast'); node.replaceChildren(document.createTextNode(message)); node.hidden = false; node.classList.toggle('error', error);
-    if (action) { const button = document.createElement('button'); button.textContent = 'Annulla'; button.onclick = () => { action(); node.hidden = true; }; node.append(button); }
+    if (action) { const button = document.createElement('button'); button.textContent = t('common.cancel'); button.onclick = () => { action(); node.hidden = true; }; node.append(button); }
     toastTimer = setTimeout(() => { node.hidden = true; }, error ? 12000 : 6500);
   }
   function formMessage(message = '', error = false) { $('form-message').textContent = message; $('form-message').classList.toggle('error', error); }
@@ -347,15 +762,15 @@
   function renderSettings() {
     $('home-latitude').value = String(state.settings.center[0]); $('home-longitude').value = String(state.settings.center[1]); $('home-zoom').value = state.settings.zoom;
     const isQuadrilatero = state.settings.center.every((n,i) => Math.abs(n-DEFAULT_CENTER[i]) < .000001);
-    $('location-title').textContent = isQuadrilatero ? 'Quadrilatero Romano' : 'Centro personalizzato';
-    $('location-subtitle').textContent = isQuadrilatero ? 'Torino · Impostazioni mappa ⚙' : 'Modifica coordinate e zoom ⚙';
-    $('map').setAttribute('aria-label', 'Mappa interattiva · Centro: ' + state.settings.center.join(', '));
+    $('location-title').textContent = t(isQuadrilatero ? 'loc.default.title' : 'loc.custom.title');
+    $('location-subtitle').textContent = t(isQuadrilatero ? 'loc.default.sub' : 'loc.custom.sub');
+    $('map').setAttribute('aria-label', t('map.aria', { c:state.settings.center.join(', ') }));
     $('settings-message').textContent = ''; $('settings-message').classList.remove('error');
   }
   function goHome() { if (map && !exporting) { map.closePopup(); map.setView(state.settings.center,state.settings.zoom); } }
   function applySettings(settings) {
     cancelSearch(); searchCache.clear(); state.settings = validateSettings(settings); renderSettings(); saveState(); goHome();
-    $('settings-message').textContent = storageMessage ? 'Centro applicato. ' + storageMessage : 'Centro e zoom salvati: verranno usati anche alla riapertura.';
+    $('settings-message').textContent = storageMessage ? t('settings.appliedWarn', { msg:t(storageMessage) }) : t('settings.applied');
     $('settings-message').classList.toggle('error',Boolean(storageMessage));
   }
   $('settings-form').onsubmit = event => {
@@ -373,7 +788,7 @@
   function popupFor(building) {
     const box = document.createElement('div'), title = document.createElement('h3'), category = document.createElement('span'), coords = document.createElement('div');
     title.className = 'popup-title'; title.textContent = building.address;
-    category.className = 'popup-category' + categoryClass(building.category); category.textContent = LABELS[building.category];
+    category.className = 'popup-category' + categoryClass(building.category); category.textContent = label(building.category);
     box.append(title, category);
     if (building.notes) { const notes = document.createElement('p'); notes.className = 'popup-notes'; notes.textContent = building.notes; box.append(notes); }
     coords.className = 'popup-coords'; coords.textContent = building.lat.toFixed(6) + ', ' + building.lng.toFixed(6); box.append(coords);
@@ -383,66 +798,66 @@
     if (buildingsLayer) buildingsLayer.clearLayers(); markers.clear(); $('building-list').replaceChildren();
     state.buildings.forEach((b, index) => {
       if (map) {
-        const marker = L.marker([b.lat, b.lng], { icon:markerIcon(b.category, index + 1), title:b.address, alt:LABELS[b.category] + ': ' + b.address, keyboard:true });
+        const marker = L.marker([b.lat, b.lng], { icon:markerIcon(b.category, index + 1), title:b.address, alt:label(b.category) + ': ' + b.address, keyboard:true });
         marker.bindPopup(popupFor(b), { maxWidth:300 }).addTo(buildingsLayer); markers.set(b.id, marker);
       }
       const row = document.createElement('li'), dot = document.createElement('i'), select = document.createElement('button'), title = document.createElement('strong'), sub = document.createElement('small'), remove = document.createElement('button');
       row.className = 'building-row'; dot.className = 'dot' + categoryClass(b.category); dot.setAttribute('aria-hidden', 'true');
-      select.className = 'building-select'; title.textContent = (index + 1) + '. ' + b.address; sub.textContent = LABELS[b.category]; select.append(title, sub);
+      select.className = 'building-select'; title.textContent = (index + 1) + '. ' + b.address; sub.textContent = label(b.category); select.append(title, sub);
       select.onclick = () => { if (!map || exporting) return; map.setView([b.lat,b.lng], Math.max(16,map.getZoom())); markers.get(b.id).openPopup(); };
-      remove.className = 'delete-btn'; remove.title = 'Elimina ' + b.address; remove.setAttribute('aria-label', 'Elimina ' + b.address);
+      remove.className = 'delete-btn'; remove.title = t('bld.delete', { name:b.address }); remove.setAttribute('aria-label', t('bld.delete', { name:b.address }));
       remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7"/></svg>';
       remove.onclick = () => {
         if (exporting) return;
         const position = state.buildings.findIndex(item => item.id === b.id); if (position < 0) return;
         state.buildings.splice(position,1); renderBuildings(); saveState();
-        toast('Edificio eliminato.', false, () => { state.buildings.splice(Math.min(position,state.buildings.length),0,b); renderBuildings(); saveState(); });
+        toast(t('bld.deleted'), false, () => { state.buildings.splice(Math.min(position,state.buildings.length),0,b); renderBuildings(); saveState(); });
       };
       row.append(dot, select, remove); $('building-list').append(row);
     });
     const count = category => state.buildings.filter(b => b.category === category).length;
     $('worked-count').textContent = count('worked'); $('similar-count').textContent = count('similar'); $('known-count').textContent = count('known');
-    $('building-count').textContent = state.buildings.length + (state.buildings.length === 1 ? ' edificio' : ' edifici'); $('empty-state').hidden = state.buildings.length > 0;
+    $('building-count').textContent = tn('inv.count', state.buildings.length); $('empty-state').hidden = state.buildings.length > 0;
   }
 
   // Coordinate manuali, selezione sulla mappa e geocodifica esplicita via Photon.
   function cancelSearch() {
-    searchSequence++; if (searchAbort) searchAbort.abort(); searching = false; $('add-building').disabled = false; $('add-building').textContent = '+  Aggiungi edificio'; $('search-results').replaceChildren(); formMessage();
+    searchSequence++; if (searchAbort) searchAbort.abort(); searching = false; $('add-building').disabled = false; renderAddLabel(); $('search-results').replaceChildren(); formMessage();
   }
   function setPicking(active) {
     if (!map || exporting) return;
-    if (active && drawing) { toast('Termina o annulla prima il tracciamento della strada.', true); return; }
+    if (active && drawing) { toast(t('pick.endDraw'), true); return; }
     if (active) map.closePopup();
     picking = active; $('map').classList.toggle('picking', picking); $('pick-location').classList.toggle('active', picking); $('pick-location').setAttribute('aria-pressed', String(picking));
-    $('pick-location').textContent = picking ? 'Annulla scelta del punto' : '⌖  Scegli il punto sulla mappa'; updateMode();
+    renderPickLabel(); updateMode();
   }
   function choosePoint(lat,lng) {
     $('latitude').value = lat.toFixed(6); $('longitude').value = lng.toFixed(6);
     if (previewMarker) previewMarker.remove();
     previewMarker = L.circleMarker([lat,lng], { radius:8, color:COLORS.worked, fillColor:'#fff', fillOpacity:1, weight:3 }).addTo(map);
-    setPicking(false); cancelSearch(); formMessage('Punto selezionato. Completa il modulo e aggiungi l’edificio.');
+    setPicking(false); cancelSearch(); formMessage(t('pick.chosen'));
   }
   function readCoordinates(latitudeId = 'latitude', longitudeId = 'longitude', optional = true) {
     const a = $(latitudeId).value.trim(), b = $(longitudeId).value.trim();
     if (!a && !b && optional) return null;
-    if ((!a || !b) && !optional) throw new Error('Inserisci sia la latitudine sia la longitudine del centro.');
-    if (!a || !b) throw new Error('Inserisci entrambe le coordinate, oppure lascia vuoti tutti e due i campi.');
+    if ((!a || !b) && !optional) throw new Error(t('coord.both'));
+    if (!a || !b) throw new Error(t('coord.pair'));
     const pattern = /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/;
-    if (!pattern.test(a) || !pattern.test(b)) throw new Error('Usa coordinate decimali, ad esempio 45.07030 e 7.68690.');
+    if (!pattern.test(a) || !pattern.test(b)) throw new Error(t('coord.format'));
     const point = [Number(a.replace(',','.')),Number(b.replace(',','.'))];
-    if (!validPoint(point)) throw new Error('Latitudine da −90 a 90; longitudine da −180 a 180.');
+    if (!validPoint(point)) throw new Error(t('coord.range'));
     return point;
   }
   function addBuilding(point) {
     const address = $('address').value.trim();
-    if (!address) { formMessage('Inserisci un indirizzo per riconoscere l’edificio.',true); $('address').focus(); return; }
+    if (!address) { formMessage(t('addr.need1'),true); $('address').focus(); return; }
     const b = { id:uid(), address, lat:point[0], lng:point[1], category:document.querySelector('input[name="category"]:checked').value, notes:$('notes').value.trim() };
     state.buildings.push(b); cancelSearch(); setPicking(false);
     if (previewMarker) { previewMarker.remove(); previewMarker = null; }
     const selectedCategory = b.category; $('building-form').reset(); document.querySelector(`input[name="category"][value="${selectedCategory}"]`).checked = true;
     renderBuildings(); saveState();
     if (map) { map.setView(point,Math.max(map.getZoom(),16)); markers.get(b.id).openPopup(); }
-    toast('Edificio aggiunto all’archivio.');
+    toast(t('bld.added'));
   }
   function photonLabel(feature) {
     const p = feature.properties || {};
@@ -450,10 +865,10 @@
     return [...new Set([p.name,street,p.postcode,p.city || p.town || p.village,p.state,p.country].filter(Boolean))].join(', ');
   }
   async function searchAddress(address) {
-    if (Date.now() - searchRequestTime < 1500) { formMessage('Attendi un istante prima di ripetere la ricerca.',true); return; }
+    if (Date.now() - searchRequestTime < 1500) { formMessage(t('search.wait'),true); return; }
     cancelSearch(); searching = true;
-    const sequence = searchSequence, key = address.toLocaleLowerCase('it');
-    $('add-building').disabled = true; $('add-building').textContent = 'Ricerca indirizzo…'; formMessage('Ricerca in corso. Le coordinate non vengono mai scelte automaticamente.');
+    const sequence = searchSequence, key = address.toLowerCase();
+    $('add-building').disabled = true; $('add-building').textContent = t('form.searching'); formMessage(t('search.running'));
     searchAbort = new AbortController(); const timeout = setTimeout(() => searchAbort.abort(),12000);
     try {
       let features = searchCache.get(key);
@@ -462,30 +877,30 @@
         const url = new URL('https://photon.komoot.io/api/');
         url.search = new URLSearchParams({ q:address, limit:'5', lat:String(state.settings.center[0]), lon:String(state.settings.center[1]) }).toString();
         const response = await fetch(url, { signal:searchAbort.signal, credentials:'omit' });
-        if (!response.ok) throw new Error('Il servizio indirizzi non è disponibile al momento.');
+        if (!response.ok) throw new Error(t('search.unavailable'));
         const result = await response.json();
         features = (result.features || []).filter(f => f.geometry && f.geometry.type === 'Point' && validPoint([f.geometry.coordinates?.[1],f.geometry.coordinates?.[0]]));
         searchCache.set(key,features);
       }
       if (sequence !== searchSequence) return;
-      formMessage(features.length ? 'Scegli l’indirizzo corretto per aggiungere l’edificio:' : 'Nessun risultato. Specifica anche la città oppure scegli un punto sulla mappa.',!features.length);
+      formMessage(features.length ? t('search.choose') : t('search.none'),!features.length);
       features.forEach(feature => {
         const li = document.createElement('li'), button = document.createElement('button'); button.type = 'button'; button.textContent = photonLabel(feature) || address;
         button.onclick = () => addBuilding([feature.geometry.coordinates[1],feature.geometry.coordinates[0]]); li.append(button); $('search-results').append(li);
       });
     } catch (error) {
-      if (sequence === searchSequence) formMessage('Ricerca non riuscita. Controlla la connessione, inserisci le coordinate oppure scegli il punto sulla mappa.',true);
+      if (sequence === searchSequence) formMessage(t('search.failed'),true);
     } finally {
       clearTimeout(timeout);
-      if (sequence === searchSequence) { searching = false; $('add-building').disabled = false; $('add-building').textContent = '+  Aggiungi edificio'; }
+      if (sequence === searchSequence) { searching = false; $('add-building').disabled = false; renderAddLabel(); }
     }
   }
   $('building-form').addEventListener('submit',event => {
     event.preventDefault(); if (exporting || searching) return;
-    if (drawing) { formMessage('Termina o annulla il tracciamento prima di aggiungere un edificio.',true); return; }
+    if (drawing) { formMessage(t('draw.beforeAdd'),true); return; }
     try {
       const point = readCoordinates(); const address = $('address').value.trim();
-      if (!address) { formMessage('Inserisci un indirizzo.',true); return; }
+      if (!address) { formMessage(t('addr.need2'),true); return; }
       if (point) addBuilding(point); else searchAddress(address);
     } catch (error) { formMessage(error.message,true); }
   });
@@ -494,7 +909,7 @@
 
   // Strade: ogni click salva anche la bozza, recuperabile dopo una riapertura.
   function roadLength(points) { let total = 0; if (map) for (let i=1;i<points.length;i++) total += map.distance(points[i-1],points[i]); return total; }
-  const formatDistance = m => m >= 1000 ? (m/1000).toLocaleString('it-IT',{ maximumFractionDigits:2 }) + ' km' : Math.round(m) + ' m';
+  const formatDistance = m => m >= 1000 ? (m/1000).toLocaleString(locale(),{ maximumFractionDigits:2 }) + ' km' : Math.round(m) + ' m';
   function drawLine(points, draft = false, selected = false) {
     return L.polyline(points,{ color:selected ? COLORS.roadSelected : COLORS.road, weight:selected ? 7 : 4, dashArray:selected ? null : '9 8', lineCap:'round', opacity:draft ? .8 : .95 });
   }
@@ -516,7 +931,7 @@
       state.roads.forEach((road,index) => {
         const selected = road.id === selectedRoadId;
         const line = drawLine(road.points, false, selected)
-          .bindTooltip('Strada ' + (index+1) + ' · ' + formatDistance(roadLength(road.points)) + (selected ? ' · selezionata' : ''))
+          .bindTooltip(t('road.name', { n:index+1 }) + ' · ' + formatDistance(roadLength(road.points)) + (selected ? ' · ' + t('road.selected') : ''))
           .addTo(roadsLayer);
         line.on('click', event => { L.DomEvent.stop(event); if (!drawing && !picking) selectRoad(road.id, true); });
         if (selected) line.bringToFront();
@@ -531,7 +946,7 @@
     }
     $('roads-count').textContent = state.roads.length;
     const points = state.draft?.points || [];
-    $('road-status').textContent = drawing ? points.length + (points.length === 1 ? ' punto inserito' : ' punti inseriti') : 'Nessun tracciamento attivo';
+    $('road-status').textContent = drawing ? tn('road.points', points.length) : t('road.status.none');
     $('road-distance').textContent = formatDistance(drawing ? roadLength(points) : state.roads.reduce((sum,r) => sum + roadLength(r.points),0));
     $('start-road').hidden = drawing; $('finish-road').hidden = !drawing; $('draft-actions').hidden = !drawing;
     $('finish-road').disabled = points.length < 2; $('undo-point').disabled = !points.length;
@@ -549,8 +964,8 @@
       const selected = road.id === selectedRoadId;
       row.className = 'building-row' + (selected ? ' selected' : ''); dot.className = 'line-dot'; dot.setAttribute('aria-hidden','true');
       select.className = 'building-select'; select.setAttribute('aria-pressed', String(selected));
-      title.textContent = 'Strada ' + (index + 1);
-      sub.textContent = formatDistance(roadLength(road.points)) + ' · ' + road.points.length + (road.points.length === 1 ? ' punto' : ' punti') + (selected ? ' · selezionata' : '');
+      title.textContent = t('road.name', { n:index + 1 });
+      sub.textContent = formatDistance(roadLength(road.points)) + ' · ' + tn('road.pt', road.points.length) + (selected ? ' · ' + t('road.selected') : '');
       select.append(title, sub);
       select.onclick = () => {
         if (!map || exporting || !road.points.length) return;
@@ -558,21 +973,21 @@
         selectRoad(road.id);
         if (!wasSelected) map.fitBounds(L.latLngBounds(road.points), { padding:[40,40] });
       };
-      remove.className = 'delete-btn'; remove.title = 'Elimina strada ' + (index + 1);
-      remove.setAttribute('aria-label','Elimina strada ' + (index + 1));
+      remove.className = 'delete-btn'; remove.title = t('road.delete', { n:index + 1 });
+      remove.setAttribute('aria-label', t('road.delete', { n:index + 1 }));
       remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7"/></svg>';
       remove.onclick = () => {
         if (exporting || drawing) return;
         const position = state.roads.findIndex(item => item.id === road.id); if (position < 0) return;
         state.roads.splice(position,1); renderRoads(); saveState();
-        toast('Strada eliminata.', false, () => { state.roads.splice(Math.min(position,state.roads.length),0,road); renderRoads(); saveState(); });
+        toast(t('road.deleted'), false, () => { state.roads.splice(Math.min(position,state.roads.length),0,road); renderRoads(); saveState(); });
       };
       row.append(dot, select, remove); list.append(row);
     });
   }
   function updateMode() {
     $('mode-banner').hidden = !drawing && !picking;
-    $('mode-text').textContent = drawing ? 'Tracciamento attivo · Clicca sulla mappa. Servono almeno 2 punti. Termina con «Fine tracciamento».' : 'Clicca sulla mappa per selezionare la posizione dell’edificio.';
+    $('mode-text').textContent = t(drawing ? 'mode.draw' : 'mode.pick');
     if (map) { if (drawing || picking) map.doubleClickZoom.disable(); else map.doubleClickZoom.enable(); }
   }
   function startRoad() {
@@ -583,12 +998,12 @@
   }
   function finishRoad() {
     if (!state.draft || state.draft.points.length < 2 || exporting) return;
-    state.roads.push(state.draft); state.draft = null; drawing = false; renderRoads(); saveState(); toast('Strada salvata. Puoi iniziare un nuovo segmento.');
+    state.roads.push(state.draft); state.draft = null; drawing = false; renderRoads(); saveState(); toast(t('road.savedToast'));
   }
   function cancelRoad() {
     if (!drawing || exporting) return;
     const discarded = state.draft; state.draft = null; drawing = false; renderRoads(); saveState();
-    if (discarded.points.length) toast('Tracciamento annullato.',false,() => { if (drawing) return; setPicking(false); state.draft = discarded; drawing = true; renderRoads(); saveState(); });
+    if (discarded.points.length) toast(t('road.cancelled'),false,() => { if (drawing) return; setPicking(false); state.draft = discarded; drawing = true; renderRoads(); saveState(); });
   }
   $('start-road').onclick = startRoad; $('finish-road').onclick = finishRoad; $('cancel-road').onclick = cancelRoad;
   $('undo-point').onclick = () => { if (state.draft && !exporting) { state.draft.points.pop(); renderRoads(); saveState(); } };
@@ -597,7 +1012,7 @@
 
   // GeoJSON: backup interoperabile e alternativa al PNG, con importazione validata.
   function geojson(includeRoads) {
-    const features = state.buildings.map(b => ({ type:'Feature', id:b.id, geometry:{ type:'Point', coordinates:[b.lng,b.lat] }, properties:{ kind:'building', address:b.address, category:b.category, category_label:LABELS[b.category], notes:b.notes } }));
+    const features = state.buildings.map(b => ({ type:'Feature', id:b.id, geometry:{ type:'Point', coordinates:[b.lng,b.lat] }, properties:{ kind:'building', address:b.address, category:b.category, category_label:label(b.category), notes:b.notes } }));
     if (includeRoads) {
       const roads = [...state.roads]; if (state.draft?.points.length >= 2) roads.push(state.draft);
       roads.forEach(r => features.push({ type:'Feature', id:r.id, geometry:{ type:'LineString', coordinates:r.points.map(p => [p[1],p[0]]) }, properties:{ kind:'road', status:r === state.draft ? 'draft' : 'complete', stroke:COLORS.road } }));
@@ -609,22 +1024,22 @@
   }
   const fileStamp = () => new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   function exportGeoJSON(includeRoads) {
-    download(new Blob([JSON.stringify(geojson(includeRoads),null,2)],{ type:'application/geo+json' }), 'city-tracker-' + (includeRoads ? 'completo' : 'edifici') + '-' + fileStamp() + '.geojson');
-    toast('Backup GeoJSON esportato.' + (includeRoads && state.draft?.points.length === 1 ? ' Il punto singolo della bozza non forma ancora una strada.' : ''));
+    download(new Blob([JSON.stringify(geojson(includeRoads),null,2)],{ type:'application/geo+json' }), 'city-tracker-' + t(includeRoads ? 'file.all' : 'file.buildings') + '-' + fileStamp() + '.geojson');
+    toast(t('geo.exported') + (includeRoads && state.draft?.points.length === 1 ? ' ' + t('geo.draftPoint') : ''));
   }
   function parseImport(data) {
     if (data?.version === 1) return validateState({ ...data,settings:data.settings === undefined ? state.settings : data.settings });
-    if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('Seleziona un backup GeoJSON esportato da questa app.');
+    if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error(t('imp.notApp'));
     const next = emptyState();
     next.settings = validateSettings(data.map_settings === undefined ? state.settings : data.map_settings);
     data.features.forEach(f => {
-      if (!f || f.type !== 'Feature' || !f.geometry || !f.properties) throw new Error('Il file contiene un elemento non valido.');
+      if (!f || f.type !== 'Feature' || !f.geometry || !f.properties) throw new Error(t('imp.badElement'));
       const p = f.properties, g = f.geometry;
       if (g.type === 'Point' && p.kind === 'building' && Array.isArray(g.coordinates)) next.buildings.push({ id:f.id || uid(), address:p.address, notes:p.notes ?? '', category:p.category, lat:g.coordinates[1], lng:g.coordinates[0] });
       else if (g.type === 'LineString' && p.kind === 'road' && Array.isArray(g.coordinates) && g.coordinates.every(c => Array.isArray(c) && c.length >= 2)) {
         const road = { id:f.id || uid(), points:g.coordinates.map(c => [c[1],c[0]]) };
-        if (p.status === 'draft') { if (next.draft) throw new Error('Il backup contiene più bozze di strada.'); next.draft = road; } else next.roads.push(road);
-      } else throw new Error('Il GeoJSON contiene elementi non riconosciuti. Usa un backup di questa app.');
+        if (p.status === 'draft') { if (next.draft) throw new Error(t('imp.multiDraft')); next.draft = road; } else next.roads.push(road);
+      } else throw new Error(t('imp.unknown'));
     });
     return validateState(next);
   }
@@ -633,13 +1048,13 @@
   $('import-file').onchange = async event => {
     const file = event.target.files[0]; if (!file) return;
     try {
-      if (file.size > 20*1024*1024) throw new Error('Il file supera il limite di 20 MB.');
+      if (file.size > 20*1024*1024) throw new Error(t('imp.tooBig'));
       const next = parseImport(JSON.parse(await file.text()));
-      const count = next.buildings.length + ' edifici e ' + next.roads.length + ' strade' + (next.draft ? ', più una bozza' : '');
-      if (!window.confirm('Importare ' + count + '?\nIl backup sostituirà l’archivio attuale. Puoi esportarlo in GeoJSON prima di procedere.')) return;
+      const count = t('imp.sum', { b:tn('imp.b', next.buildings.length), r:tn('imp.r', next.roads.length) }) + (next.draft ? t('imp.draft') : '');
+      if (!window.confirm(t('imp.confirm', { sum:count }))) return;
       cancelSearch(); setPicking(false); if (previewMarker) { previewMarker.remove(); previewMarker = null; }
-      state = next; storageReady = true; drawing = Boolean(state.draft); renderSettings(); renderBuildings(); renderRoads(); saveState(); fitAll(); toast('Backup importato: ' + count + '.');
-    } catch (error) { toast(error instanceof SyntaxError ? 'Il file non contiene JSON valido. Nessun dato modificato.' : error.message,true); }
+      state = next; storageReady = true; drawing = Boolean(state.draft); renderSettings(); renderBuildings(); renderRoads(); saveState(); fitAll(); toast(t('imp.done', { sum:count }));
+    } catch (error) { toast(error instanceof SyntaxError ? t('imp.badJson') : error.message,true); }
     finally { event.target.value = ''; }
   };
 
@@ -648,7 +1063,11 @@
   // La mappa originale e le sue strade non vengono nascoste né modificate.
   function legendElement(includeRoads = true) {
     const legend = document.createElement('div'); legend.className = 'map-legend';
-    legend.innerHTML = '<div class="legend-heading">LEGENDA DEI RILIEVI</div><div class="legend-row"><i class="legend-pin" aria-hidden="true"></i>Già lavorato</div><div class="legend-row"><i class="legend-pin orange" aria-hidden="true"></i>Supposto simile</div><div class="legend-row"><i class="legend-pin green" aria-hidden="true"></i>Di cui siamo a conoscenza</div>' + (includeRoads ? '<div class="legend-row"><i class="legend-line" aria-hidden="true"></i>Strada percorsa</div>' : '');
+    legend.innerHTML = '<div class="legend-heading">' + t('png.heading') + '</div>'
+      + '<div class="legend-row"><i class="legend-pin" aria-hidden="true"></i>' + label('worked') + '</div>'
+      + '<div class="legend-row"><i class="legend-pin orange" aria-hidden="true"></i>' + label('similar') + '</div>'
+      + '<div class="legend-row"><i class="legend-pin green" aria-hidden="true"></i>' + label('known') + '</div>'
+      + (includeRoads ? '<div class="legend-row"><i class="legend-line" aria-hidden="true"></i>' + t('legend.road') + '</div>' : '');
     return legend;
   }
   function paintPin(ctx,x,y,color,number) {
@@ -656,24 +1075,24 @@
   }
   async function waitTiles() {
     const started = Date.now();
-    while (tiles.isLoading()) { if (Date.now()-started > 15000) throw new Error('La cartografia non ha terminato il caricamento. Riprova o usa GeoJSON.'); await new Promise(resolve => setTimeout(resolve,150)); }
+    while (tiles.isLoading()) { if (Date.now()-started > 15000) throw new Error(t('png.tilesLoad')); await new Promise(resolve => setTimeout(resolve,150)); }
   }
   async function exportPNG(includeRoads) {
     if (exporting) return;
-    if (!map || typeof html2canvas !== 'function') { toast('Libreria PNG non disponibile. Verifica Internet oppure usa i pulsanti GeoJSON.',true); return; }
-    if (drawing) { toast('Termina o annulla il tracciamento prima di esportare il PNG.',true); return; }
+    if (!map || typeof html2canvas !== 'function') { toast(t('png.unavailable'),true); return; }
+    if (drawing) { toast(t('draw.beforeExport'),true); return; }
     exporting = true; document.querySelector('.app').inert = true; $('busy-overlay').hidden = false; let stage;
     try {
       map.stop(); map.closePopup(); await waitTiles();
       const rect = $('map').getBoundingClientRect(), width = Math.round(rect.width), height = Math.round(rect.height);
       const visible = [...$('map').querySelectorAll('.leaflet-tile-pane img.leaflet-tile')].map(img => ({ img,rect:img.getBoundingClientRect() })).filter(t => t.rect.right>rect.left && t.rect.left<rect.right && t.rect.bottom>rect.top && t.rect.top<rect.bottom);
-      if (!visible.length || visible.some(t => !t.img.complete || !t.img.naturalWidth || t.img.dataset.failed === 'true')) throw new Error('Alcune parti della mappa non sono caricate. Attendi, usa «Riprova» oppure esporta GeoJSON.');
+      if (!visible.length || visible.some(t => !t.img.complete || !t.img.naturalWidth || t.img.dataset.failed === 'true')) throw new Error(t('png.partial'));
       stage = document.createElement('div'); stage.setAttribute('aria-hidden','true'); Object.assign(stage.style,{ position:'fixed', left:'-20000px', top:'0', width:width+'px', height:height+'px', overflow:'hidden', background:'#e8eee7', fontFamily:'Arial,sans-serif' }); document.body.append(stage);
       const tileCopies = visible.map(t => {
         const img = new Image(); img.crossOrigin = 'anonymous'; Object.assign(img.style,{ position:'absolute', width:t.rect.width+'px', height:t.rect.height+'px', left:(t.rect.left-rect.left)+'px', top:(t.rect.top-rect.top)+'px', maxWidth:'none' }); stage.append(img);
-        return new Promise((resolve,reject) => { img.onload = resolve; img.onerror = () => reject(new Error('Il browser non consente di esportare la cartografia. Usa il backup GeoJSON.')); img.src = t.img.currentSrc || t.img.src; });
+        return new Promise((resolve,reject) => { img.onload = resolve; img.onerror = () => reject(new Error(t('png.cors'))); img.src = t.img.currentSrc || t.img.src; });
       });
-      let tileTimeout; try { await Promise.race([Promise.all(tileCopies), new Promise((_,reject) => { tileTimeout = setTimeout(() => reject(new Error('Caricamento immagini scaduto. Riprova oppure esporta GeoJSON.')),15000); })]); } finally { clearTimeout(tileTimeout); }
+      let tileTimeout; try { await Promise.race([Promise.all(tileCopies), new Promise((_,reject) => { tileTimeout = setTimeout(() => reject(new Error(t('png.timeout'))),15000); })]); } finally { clearTimeout(tileTimeout); }
       const scale = Math.min(2,Math.sqrt(16000000/(width*height)));
       const overlay = document.createElement('canvas'); overlay.width = Math.round(width*scale); overlay.height = Math.round(height*scale); Object.assign(overlay.style,{ position:'absolute',left:'0',top:'0',width:width+'px',height:height+'px' }); const ctx = overlay.getContext('2d'); ctx.scale(scale,scale);
       if (includeRoads) {
@@ -684,12 +1103,12 @@
       state.buildings.map((b,index) => ({ b,index,point:map.latLngToContainerPoint([b.lat,b.lng]) })).sort((a,b) => a.point.y-b.point.y).forEach(({ b,index,point }) => paintPin(ctx,point.x,point.y,COLORS[b.category],index+1));
       stage.append(overlay);
       const legend = legendElement(includeRoads); Object.assign(legend.style,{ position:'absolute',left:'24px',bottom:'32px',boxShadow:'none' }); stage.append(legend);
-      const title = document.createElement('div'); title.textContent = 'City Tracker · ' + (includeRoads ? 'Edifici e strade percorse' : 'Solo edifici'); Object.assign(title.style,{ position:'absolute',top:'20px',left:'24px',background:'#fff',border:'1px solid #dce4de',borderRadius:'7px',padding:'12px 15px',fontSize:'13px',fontWeight:'bold',color:'#213c3a' }); stage.append(title);
-      const credit = document.createElement('div'); credit.textContent = provider().credit + ' · openstreetmap.org/copyright | ' + new Date().toLocaleDateString('it-IT'); Object.assign(credit.style,{ position:'absolute',bottom:'0',left:'0',right:'0',background:'#ffffff',color:'#384b46',fontSize:'10px',padding:'5px 8px',textAlign:'right' }); stage.append(credit);
+      const title = document.createElement('div'); title.textContent = 'City Tracker · ' + t(includeRoads ? 'png.titleAll' : 'png.titleBuildings'); Object.assign(title.style,{ position:'absolute',top:'20px',left:'24px',background:'#fff',border:'1px solid #dce4de',borderRadius:'7px',padding:'12px 15px',fontSize:'13px',fontWeight:'bold',color:'#213c3a' }); stage.append(title);
+      const credit = document.createElement('div'); credit.textContent = provider().credit + ' · openstreetmap.org/copyright | ' + formatDate(new Date()); Object.assign(credit.style,{ position:'absolute',bottom:'0',left:'0',right:'0',background:'#ffffff',color:'#384b46',fontSize:'10px',padding:'5px 8px',textAlign:'right' }); stage.append(credit);
       const canvas = await html2canvas(stage,{ useCORS:true,allowTaint:false,scale,backgroundColor:'#e8eee7',logging:false,imageTimeout:15000,width,height,windowWidth:Math.max(window.innerWidth,width),windowHeight:Math.max(window.innerHeight,height) });
-      const blob = await new Promise((resolve,reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Impossibile creare il PNG. Usa il backup GeoJSON.')),'image/png'));
-      download(blob,'city-tracker-' + (includeRoads ? 'completo' : 'edifici') + '-' + fileStamp() + '.png'); toast('PNG esportato con legenda e attribuzione cartografica.');
-    } catch (error) { toast(error.message || 'Esportazione PNG non riuscita. Usa i pulsanti GeoJSON.',true); $('export-section').open = true; }
+      const blob = await new Promise((resolve,reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error(t('png.fail'))),'image/png'));
+      download(blob,'city-tracker-' + t(includeRoads ? 'file.all' : 'file.buildings') + '-' + fileStamp() + '.png'); toast(t('png.done'));
+    } catch (error) { toast(error.message || t('png.failGeneric'),true); $('export-section').open = true; }
     finally { if (stage) stage.remove(); exporting = false; document.querySelector('.app').inert = false; $('busy-overlay').hidden = true; }
   }
   $('export-all').onclick = () => exportPNG(true); $('export-buildings').onclick = () => exportPNG(false);
@@ -699,7 +1118,7 @@
     if (!map || exporting) return;
     const points = state.buildings.map(b => [b.lat,b.lng]).concat(state.roads.flatMap(r => r.points),state.draft?.points || []);
     if (points.length) map.fitBounds(L.latLngBounds(points),{ paddingTopLeft:[55,130],paddingBottomRight:[60,170],maxZoom:17 });
-    else { goHome(); toast('Aggiungi un edificio o una strada per inquadrare i rilievi.'); }
+    else { goHome(); toast(t('map.fitEmpty')); }
   }
   // Se un provider smette di rispondere (blocco o guasto), si passa al successivo senza perdere i dati.
   function addTileLayer() {
@@ -710,22 +1129,22 @@
       event.tile.dataset.failed = 'true';
       if (++providerErrors >= 4 && providerIndex < TILE_PROVIDERS.length - 1) {
         providerIndex++; addTileLayer();
-        showMapNotice('La cartografia precedente non era disponibile: è stata caricata una mappa alternativa. I tuoi dati non sono stati toccati.');
+        showMapNotice(t('map.altTiles'));
         return;
       }
-      showMapNotice('Alcune parti della cartografia non sono disponibili. Controlla Internet e premi «Riprova».');
+      showMapNotice(t('map.tilesPartial'));
     });
     tiles.on('tileload',event => { delete event.tile.dataset.failed; });
   }
   function initMap() {
     if (typeof L === 'undefined') {
-      showMapNotice('Mappa non caricata. Connettiti a Internet e premi «Riprova». I dati locali e i backup restano accessibili.'); $('pick-location').disabled = true; $('start-road').disabled = true; return;
+      showMapNotice(t('map.notLoaded')); $('pick-location').disabled = true; $('start-road').disabled = true; return;
     }
     map = L.map('map',{ center:state.settings.center,zoom:state.settings.zoom,minZoom:2,maxZoom:19,zoomControl:false,preferCanvas:true,zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false });
     L.control.zoom({ position:'topright' }).addTo(map);
     addTileLayer();
     buildingsLayer = L.layerGroup().addTo(map); roadsLayer = L.layerGroup().addTo(map); draftLayer = L.layerGroup().addTo(map);
-    const Legend = L.Control.extend({ options:{ position:'bottomleft' },onAdd:() => { const node = legendElement(); L.DomEvent.disableClickPropagation(node); L.DomEvent.disableScrollPropagation(node); return node; } }); new Legend().addTo(map);
+    const Legend = L.Control.extend({ options:{ position:'bottomleft' },onAdd:() => { const node = legendElement(); L.DomEvent.disableClickPropagation(node); L.DomEvent.disableScrollPropagation(node); return node; } }); legendControl = new Legend().addTo(map);
     map.on('click',event => {
       if (exporting) return;
       const p = event.latlng.wrap(); if (!validPoint([p.lat,p.lng])) return;
@@ -735,13 +1154,69 @@
         state.draft.points.push([p.lat,p.lng]); renderRoads(); saveState();
       }
     });
-    drawing = Boolean(state.draft); if (drawing) { $('roads-section').open = true; toast('Tracciamento recuperato. Puoi aggiungere punti o terminarlo.'); }
+    drawing = Boolean(state.draft); if (drawing) { $('roads-section').open = true; toast(t('road.recovered')); }
     window.addEventListener('resize',() => map.invalidateSize());
   }
   $('fit-all').onclick = fitAll; $('go-home').onclick = goHome;
   $('retry-map').onclick = () => { if (!map) { location.reload(); return; } $('map-notice').hidden = true; tiles.redraw(); };
+  // Lingua: ?lang= nell’indirizzo > scelta salvata > italiano. Il cambio aggiorna anche l’indirizzo, così il link resta condivisibile.
+  function detectLang() {
+    const wanted = new URLSearchParams(location.search).get('lang');
+    if (LANGS.includes(wanted)) return wanted;
+    try { const saved = localStorage.getItem(LANG_KEY); if (LANGS.includes(saved)) return saved; } catch (error) {}
+    return 'it';
+  }
+  function setHead(selector, attribute, value) { const node = document.querySelector(selector); if (node) node.setAttribute(attribute, value); }
+  const canonicalBase = (document.querySelector('link[rel="canonical"]') || {}).href || '';
+  function renderPickLabel() { $('pick-location').textContent = t(picking ? 'form.pick.cancel' : 'form.pick'); }
+  function renderAddLabel() { $('add-building').textContent = t(searching ? 'form.searching' : 'form.add'); }
+  function applyStaticLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-html]').forEach(node => { node.innerHTML = t(node.dataset.i18nHtml); });
+    document.querySelectorAll('[data-i18n-attr]').forEach(node => node.dataset.i18nAttr.split(';').forEach(pair => { const [attribute, key] = pair.split(':'); node.setAttribute(attribute.trim(), t(key.trim())); }));
+    document.querySelectorAll('.lang-switch button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.lang === lang)));
+    const address = canonicalBase + (lang === 'en' ? '?lang=en' : '');
+    document.title = t('meta.title');
+    setHead('meta[name="description"]', 'content', t('meta.desc'));
+    setHead('link[rel="canonical"]', 'href', address);
+    setHead('meta[property="og:url"]', 'content', address);
+    setHead('meta[property="og:title"]', 'content', t('meta.title'));
+    setHead('meta[property="og:description"]', 'content', t('meta.desc'));
+    setHead('meta[property="og:image:alt"]', 'content', t('meta.ogAlt'));
+    setHead('meta[property="og:locale"]', 'content', lang === 'it' ? 'it_IT' : 'en_GB');
+    setHead('meta[property="og:locale:alternate"]', 'content', lang === 'it' ? 'en_GB' : 'it_IT');
+    setHead('meta[name="twitter:title"]', 'content', t('meta.title'));
+    setHead('meta[name="twitter:description"]', 'content', t('meta.desc'));
+    setHead('meta[name="twitter:image:alt"]', 'content', t('meta.ogAlt'));
+    renderPickLabel(); renderAddLabel();
+  }
+  function applyLang() {
+    applyStaticLang(); renderSettings(); renderBuildings(); renderRoads(); renderSaveStatus();
+    if (legendControl) { legendControl.remove(); legendControl.addTo(map); }
+  }
+  function setLang(next) {
+    if (!LANGS.includes(next)) return;
+    lang = next;
+    try { localStorage.setItem(LANG_KEY, next); } catch (error) {}
+    try { const url = new URL(location.href); if (next === 'it') url.searchParams.delete('lang'); else url.searchParams.set('lang', next); history.replaceState(null, '', url); } catch (error) {}
+    $('lang-suggest').hidden = true;
+    applyLang();
+  }
+  // Suggerimento (non automatico, per non servire lingue diverse sullo stesso indirizzo): solo a chi ha un browser non italiano e non ha ancora scelto.
+  function maybeSuggestEnglish() {
+    let chosen = new URLSearchParams(location.search).has('lang');
+    try { chosen = chosen || localStorage.getItem(LANG_KEY) !== null; } catch (error) {}
+    const browserLang = (navigator.language || '').toLowerCase();
+    $('lang-suggest').hidden = chosen || lang !== 'it' || !browserLang || browserLang.startsWith('it');
+  }
+  document.querySelectorAll('.lang-switch button').forEach(button => { button.onclick = () => setLang(button.dataset.lang); });
+  $('lang-suggest-go').onclick = () => setLang('en');
+  $('lang-suggest-close').onclick = () => { try { localStorage.setItem(LANG_KEY, 'it'); } catch (error) {} $('lang-suggest').hidden = true; };
+
   window.addEventListener('pagehide',saveState);
-  loadState(); renderSettings(); initMap(); renderBuildings(); renderRoads();
+  lang = detectLang(); applyStaticLang();
+  loadState(); renderSettings(); initMap(); renderBuildings(); renderRoads(); renderSaveStatus(); maybeSuggestEnglish();
   if (storageMessage) storageWarning(storageMessage);
 })();
 </script>

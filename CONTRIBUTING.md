@@ -16,7 +16,8 @@ Serve una connessione a Internet, perché librerie, cartografia e geocodifica ar
 
 - **JavaScript vanilla**, dentro l'unica IIFE. Niente framework, niente import: romperebbero
   l'apertura da `file://`.
-- **Italiano** per interfaccia, messaggi e commenti.
+- **Interfaccia bilingue** (italiano e inglese): ogni testo visibile è una chiave del dizionario `I18N`, mai
+  una stringa letterale. I **commenti** nel codice restano in italiano. Vedi «Aggiungere o cambiare un testo».
 - Commentare il **perché**, non il cosa. I commenti esistenti spiegano decisioni non ovvie
   (CORS, Referer, renderer canvas): mantenere quello stile.
 - Ogni sezione dell'interfaccia è un `<details class="section">` con numero progressivo.
@@ -25,7 +26,7 @@ Serve una connessione a Internet, perché librerie, cartografia e geocodifica ar
 - I colori nuovi vanno in `COLORS` (JS) e, se servono anche al CSS, come variabile in `:root`.
 - Ogni nuova funzione di rendering si chiama `render<Cosa>()` e va invocata dopo le mutazioni.
 - I messaggi all'utente passano da `toast()` (temporanei), `formMessage()` (nel form) o
-  `storageWarning()` (footer): sempre in italiano e sempre con un'indicazione di cosa fare.
+  `storageWarning()` (footer, accetta una **chiave** del dizionario): sempre con un'indicazione di cosa fare.
 - Le azioni distruttive offrono un annullamento nel toast, che ripristina l'elemento nella
   **posizione originale** (`splice`, non `push`).
 
@@ -34,7 +35,8 @@ Serve una connessione a Internet, perché librerie, cartografia e geocodifica ar
 Le categorie non sono definite in un punto solo. Per aggiungerne una (come è stato fatto per
 `known`) bisogna toccare, in `index.html`:
 
-1. **`COLORS`, `LABELS` e `CATEGORY_CLASS`** nello script: sono la sorgente dei dati.
+1. **`COLORS` e `CATEGORY_CLASS`** nello script (sorgente delle chiavi valide), più le etichette
+   `cat.<chiave>` e `stat.<chiave>` **in entrambe le lingue** nel dizionario.
 2. **CSS**: variabile di colore in `:root`, e le varianti `.category.<colore>`, `.dot.<colore>`,
    `.legend-pin.<colore>`, `.popup-category.<colore>` e `.<colore>-text` per il contatore.
 3. **Form** (`name="category"`): un nuovo `<label class="category <colore>">` con il suo radio.
@@ -44,9 +46,26 @@ Le categorie non sono definite in un punto solo. Per aggiungerne una (come è st
 6. `README.md` e questa documentazione.
 
 Non servono modifiche a pin, export PNG, GeoJSON e validazione, perché leggono `COLORS` e
-`LABELS` per chiave. Collaudo specifico: aggiungere un edificio per categoria, controllare i
+`COLORS`, `CATEGORY_CLASS` e il dizionario per chiave. Collaudo specifico: aggiungere un edificio per categoria, controllare i
 contatori, esportare e reimportare un GeoJSON, importare un GeoJSON *vecchio* senza la nuova
 categoria, e verificare che una categoria inventata venga rifiutata senza toccare l'archivio.
+
+## Aggiungere o cambiare un testo
+
+1. Aggiungere la chiave **in `it` e in `en`** nel dizionario `I18N` (stesso nome in entrambe).
+2. Nel markup, usare `data-i18n="chiave"` (testo), `data-i18n-html="chiave"` (se contiene un link o un
+   `<br>`) o `data-i18n-attr="placeholder:chiave"`. Il testo italiano scritto nel markup deve coincidere con
+   quello del dizionario `it`: è quello che vedono i motori di ricerca.
+3. Nel codice, `t('chiave', { variabili })` e, per i plurali, `tn('chiave', n)` con le chiavi `.one` e `.other`.
+4. Non concatenare frammenti di frase e non usare mai testo dell'utente nei valori «html» del dizionario.
+5. Verificare che le due lingue abbiano le stesse chiavi. Dal Terminale, nella cartella del progetto:
+
+```bash
+node -e 'const s=require("fs").readFileSync("index.html","utf8"),a=s.indexOf("  const LANGS"),b=s.indexOf("  let lang = \x27it\x27;"),m=new Function(s.slice(a,b)+";return I18N")(),i=Object.keys(m.it),e=Object.keys(m.en);console.log("it:",i.length,"en:",e.length,"diverse:",i.filter(k=>!e.includes(k)).concat(e.filter(k=>!i.includes(k))))'
+```
+
+6. Aprire il sito con `?lang=en` e percorrere i flussi che producono messaggi (errori di validazione,
+   import non valido, export): in inglese non deve comparire nulla in italiano.
 
 ## Accessibilità
 
@@ -78,7 +97,8 @@ Il sito è servito da GitHub Pages dalla radice di `main`: dopo il `git push` l'
 online in circa un minuto. Prima di spingere:
 
 1. verificare il percorso di collaudo qui sopra;
-2. aggiornare `README.md` se cambia qualcosa di visibile all'utente.
+2. aggiornare `README.md` se cambia qualcosa di visibile all'utente, e `sitemap.xml` (`lastmod`) e `og-image.jpg`
+   se cambia in modo sensibile l'aspetto.
 
 Se si cambia la versione di Leaflet o di html2canvas, **rigenerare gli hash SRI** dei tag in
 `index.html` (attributo `integrity`). Esempio per un file scaricato:

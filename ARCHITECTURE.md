@@ -13,7 +13,7 @@ Sono scelte deliberate: violarle rompe il modello d'uso del programma.
 | **Nessun backend** | Nessun costo, nessuna manutenzione, nessun dato personale su server di terzi. |
 | **Nessun framework** | JavaScript vanilla in una IIFE. React o Vue richiederebbero un build step. |
 | **Funziona da `file://`** | Il programma è aperto come file locale, non servito via HTTP. |
-| **Italiano nell'interfaccia** | L'utente finale è italiano. Anche i commenti nel codice sono in italiano. |
+| **Interfaccia bilingue (italiano e inglese)** | L'utente tipico è italiano, ma lo strumento è usabile ovunque. Il markup statico è in italiano; l'inglese si attiva con il selettore IT/EN (vedi §12). I commenti nel codice sono in italiano. |
 | **Degradazione leggibile** | Senza rete la mappa non carica, ma i dati locali e l'export GeoJSON restano accessibili. |
 
 ### Dipendenze esterne (via CDN, a runtime)
@@ -63,10 +63,12 @@ Unica struttura condivisa, nella variabile `state`:
 ```
 
 - `id` — stringa da `uid()` (timestamp base36 + random), unica nell'intero stato.
-- `category` — una delle chiavi di `LABELS`: `'worked'` (già lavorato, blu), `'similar'` (supposto
-  simile, arancione) o `'known'` (di cui siamo a conoscenza, verde). Etichette in `LABELS`, colori
-  in `COLORS`, classe CSS in `CATEGORY_CLASS`. `validateState()` accetta solo le chiavi di `LABELS`:
-  un file con una categoria sconosciuta viene rifiutato per intero (vedi §9).
+- `category` — una delle chiavi di `CATEGORY_CLASS`: `'worked'` (già lavorato, blu), `'similar'`
+  (supposto simile, arancione) o `'known'` (di cui siamo a conoscenza, verde). Colori in `COLORS`,
+  classe CSS in `CATEGORY_CLASS`, etichette tradotte nel dizionario (chiavi `cat.<categoria>`).
+  `validateState()` accetta solo le chiavi di `CATEGORY_CLASS`: un file con una categoria sconosciuta
+  viene rifiutato per intero (vedi §9). La categoria si salva **come chiave**, mai come etichetta:
+  per questo un backup si importa in qualsiasi lingua.
 - `points` — coppie **`[lat, lng]`**, l'ordine di Leaflet.
   ⚠️ Il GeoJSON usa l'ordine inverso `[lng, lat]`: la conversione avviene solo ai confini,
   in `geojson()` e `parseImport()`.
@@ -122,7 +124,7 @@ per cui l'export è presentato con tanta insistenza nell'interfaccia.
 `validateState()` e `validateSettings()` sono l'unico ingresso per dati non fidati (archivio
 locale e file importati). Applicano tipi, lunghezze massime (indirizzo 300, note 5000),
 intervalli di coordinate, `version === 1` e unicità degli `id` (`uniqueId()` rigenera i
-duplicati). Ogni anomalia lancia un errore con messaggio in italiano già presentabile.
+duplicati). Ogni anomalia lancia un errore con messaggio già presentabile, nella lingua corrente (`t('err.…')`).
 
 **Prevenzione XSS.** Il testo dell'utente entra nel DOM **solo** via `textContent` o
 `document.createTextNode`. Gli unici `innerHTML` contengono markup statico scritto dagli
@@ -280,3 +282,50 @@ radice del ramo `main`. Un `git push` aggiorna il sito in circa un minuto. Non c
 - **Cosa lascia il browser:** il testo cercato e il centro mappa (verso Photon/komoot, solo su
   azione esplicita) e le richieste di tile (verso i server cartografici, che vedono IP e zona).
   Nessun dato inserito dall'utente arriva a un server dell'autore: non ne esiste uno.
+
+## 12. Lingue (italiano e inglese)
+
+I testi stanno tutti nel dizionario `I18N` (chiavi uguali in `it` ed `en`), all'inizio dello script.
+`it` è la lingua predefinita e **coincide con il markup statico**, che è quello che vedono i motori di
+ricerca e chi non ha JavaScript.
+
+- **Testo statico**: attributi `data-i18n` (testo), `data-i18n-html` (testo con markup scritto dagli
+  sviluppatori, per esempio un link) e `data-i18n-attr="attributo:chiave;…"` (placeholder, `aria-label`,
+  `title`). `applyStaticLang()` li riscrive.
+- **Testo dinamico** (messaggi, etichette, elenchi): `t('chiave', { variabili })`, e `tn('chiave', n)` per
+  il plurale (chiavi `.one` / `.other`). Non comporre frasi concatenando pezzi: l'ordine delle parole
+  cambia da lingua a lingua.
+- **Cambio lingua**: `setLang()` aggiorna la lingua, salva la scelta in `localStorage` (chiave
+  `city_tracker_lang`, **separata dall'archivio** e non inclusa negli export), aggiorna `?lang=` nell'indirizzo
+  e chiama `applyLang()`, che ridisegna elenchi, legenda, stato di salvataggio e testata.
+- **Priorità**: `?lang=` nell'indirizzo > scelta salvata > italiano. **Non si cambia lingua da soli in base
+  al browser**: lo stesso indirizzo servirebbe lingue diverse a utenti e crawler. A chi ha un browser non
+  italiano e non ha ancora scelto compare solo un suggerimento (`#lang-suggest`).
+- **`storageMessage` contiene una chiave del dizionario**, non un testo, così il messaggio di avviso segue
+  il cambio di lingua.
+- Le **categorie** si salvano come chiave (`worked`, `similar`, `known`); l'etichetta tradotta compare solo
+  in interfaccia e nel campo informativo `category_label` del GeoJSON (che l'import ignora).
+- Formati: numeri e orari seguono `it-IT` o `en-GB`; la data nel PNG è `18/10/2026` in italiano e
+  `18 Oct 2026` in inglese.
+
+## 13. SEO e condivisione
+
+Tutto il necessario sta nella testata di `index.html` e in due file accanto:
+
+- **Titolo, descrizione, `canonical`, Open Graph, Twitter Card** in italiano nel markup statico; con
+  `?lang=en` lo script li riscrive in inglese (`applyStaticLang()`), compreso il `canonical`.
+- **`hreflang`** `it`, `en` e `x-default` (che punta all'italiano). La versione inglese è
+  `…/?lang=en`: una variante per parametro, non una cartella separata. È una scelta dovuta al vincolo del
+  file singolo; Google la gestisce se `canonical` e `hreflang` sono coerenti, ma una cartella `/en/` sarebbe
+  più robusta (richiederebbe di duplicare o separare il codice).
+- **Dati strutturati** JSON-LD `WebApplication` (nome, autore, licenza MIT, gratuito, lingue). Non ha
+  valutazioni: non vanno inventate, e senza di esse Google non mostra snippet arricchiti.
+- **`og-image.jpg`** (1200×630, circa 155 KB): anteprima dei link su WhatsApp, LinkedIn, Facebook. È un
+  montaggio dell'export PNG reale dell'app con il marchio; rigenerarla se cambia l'aspetto dell'interfaccia.
+- **`sitemap.xml`** con le due varianti e i loro `hreflang`. Da inviare in Google Search Console.
+- **Testo indicizzabile**: la sezione «05 Informazioni» e il blocco `<noscript>` (in entrambe le lingue).
+- **`robots.txt` non è utile qui**: un sito di progetto GitHub Pages vive sotto
+  `paolo410.github.io/city-tracker/`, e i crawler leggono solo `robots.txt` alla radice del dominio,
+  che non controlliamo. Si usa `<meta name="robots">`.
+- Se cambia l'indirizzo del sito, aggiornare `canonical`, `hreflang`, `og:url`, `og:image`, JSON-LD,
+  `sitemap.xml`, `CITATION.cff` e `README.md`.

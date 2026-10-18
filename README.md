@@ -1,6 +1,6 @@
 # City Tracker
 
-**▶ Usalo online: <https://paolo410.github.io/city-tracker/>**
+**▶ Usalo online: <https://paolo410.github.io/city-tracker/>** · 🇬🇧 [English version](https://paolo410.github.io/city-tracker/?lang=en)
 
 Strumento web per censire edifici su mappa e tracciare i percorsi dei sopralluoghi. Gratuito,
 senza account e senza installazione: i dati restano nel tuo browser.
@@ -15,6 +15,25 @@ senza account e senza installazione: i dati restano nel tuo browser.
 - **Esportazione** in PNG (con legenda e attribuzione cartografica) e in GeoJSON; **importazione**
   di backup GeoJSON
 - **Salvataggio automatico** nel browser
+- **Italiano e inglese**: il selettore IT / EN è in alto nella barra laterale
+
+## English
+
+**City Tracker** is a free web tool to map buildings and track the routes you walk on site visits, in any
+city. It runs entirely in your browser: no account, no installation, no server. Your data (addresses,
+notes, roads) never leaves your browser.
+
+▶ **Open it: <https://paolo410.github.io/city-tracker/?lang=en>**
+
+- Add buildings by searching an address, entering coordinates or clicking the map, in one of three
+  categories (already worked, presumed similar, known to us).
+- Trace roads with multiple segments, select one in the list or on the map and delete it with undo.
+- Export a PNG (with legend and map attribution) or a GeoJSON; import a GeoJSON backup.
+- **Using it outside Turin:** the map opens on Turin. Open *04 Map settings*, enter the latitude, longitude
+  and zoom of your city and press *Apply and centre the map*. Address search favours results near that
+  centre, so it works worldwide. Switch language with the **IT / EN** buttons at the top of the sidebar.
+- **Back up your data:** everything is saved in this browser only. Clearing site data, switching browser or
+  using a private window loses it. Export a GeoJSON regularly.
 
 ## Come si usa
 
